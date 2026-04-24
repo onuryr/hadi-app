@@ -3,14 +3,18 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../services/notification_service.dart';
 import '../services/rating_service.dart';
 import '../utils/category_defaults.dart';
 import '../widgets/star_rating.dart';
+import 'chat_screen.dart';
 import 'create_activity_screen.dart';
+import 'profile_screen.dart';
 
 class ActivityDetailScreen extends StatefulWidget {
   final Map<String, dynamic> activity;
@@ -47,6 +51,32 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   bool get _isCreator {
     final userId = _supabase.auth.currentUser?.id;
     return userId != null && _fullActivity['creator_id'] == userId;
+  }
+
+  Future<void> _shareActivity() async {
+    final activityId = widget.activity['id'].toString();
+    final title = _fullActivity['title'] ?? '';
+    final locationName = _fullActivity['location_name'] ?? '';
+    final scheduledAt = _fullActivity['scheduled_at'];
+    String date = '';
+    if (scheduledAt != null) {
+      final dt = DateTime.parse(scheduledAt).toLocal();
+      date = '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+    final link = DeepLinkService.activityUrl(activityId);
+    final text = '🎉 $title\n📅 $date\n📍 $locationName\n\nHadi, aktiviteye katıl:\n$link';
+    await Share.share(text);
+  }
+
+  void _openChat() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          activityId: widget.activity['id'].toString(),
+          activityTitle: _fullActivity['title'] ?? '',
+        ),
+      ),
+    );
   }
 
   Future<void> _openEdit() async {
@@ -174,7 +204,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     try {
       final data = await _supabase
           .from('activity_participants')
-          .select('user_id, status, users(display_name)')
+          .select('user_id, status, users(display_name, avatar_url)')
           .eq('activity_id', widget.activity['id']);
 
       if (mounted) {
@@ -305,6 +335,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         title: Text(activity['title'] ?? ''),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          if (_wasMember)
+            IconButton(
+              icon: const Icon(Icons.chat_bubble_outline),
+              tooltip: 'Sohbet',
+              onPressed: _openChat,
+            ),
           IconButton(
             icon: Icon(
               _isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -312,6 +348,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             ),
             tooltip: 'Favori',
             onPressed: _toggleFavorite,
+          ),
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Paylaş',
+            onPressed: _shareActivity,
           ),
           if (_isCreator)
             IconButton(
@@ -363,6 +404,60 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
+                if (scheduledAt != null)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.calendar_today),
+                    title: Text(
+                      '${scheduledAt.day}/${scheduledAt.month}/${scheduledAt.year} '
+                      '${scheduledAt.hour.toString().padLeft(2, '0')}:${scheduledAt.minute.toString().padLeft(2, '0')}',
+                    ),
+                  ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.people),
+                  title: Text(
+                    '${_participants.length} / ${activity['max_participants'] ?? '?'} katılımcı',
+                  ),
+                ),
+                const Divider(),
+                Text(
+                  _isPast && _wasMember ? 'Katılımcıları Puanla' : 'Katılımcılar',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ..._participants.map((p) {
+                  final userId = p['user_id']?.toString();
+                  final name = p['users']?['display_name'] ?? 'Bilinmiyor';
+                  final avatarUrl = p['users']?['avatar_url'] as String?;
+                  final currentUserId = _supabase.auth.currentUser?.id;
+                  final canRate = _isPast && _wasMember && userId != null && userId != currentUserId;
+                  final myRating = userId != null ? (_myRatings[userId] ?? 0) : 0;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
+                      child: avatarUrl == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?') : null,
+                    ),
+                    title: Text(name),
+                    subtitle: canRate
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: StarRating(
+                              value: myRating,
+                              size: 24,
+                              onChanged: (r) => _rateUser(userId, r),
+                            ),
+                          )
+                        : null,
+                    onTap: userId == null
+                        ? null
+                        : () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId)),
+                            ),
+                  );
+                }),
+                const Divider(height: 32),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.location_on),
@@ -402,50 +497,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                  );
-                }),
-                if (scheduledAt != null)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.calendar_today),
-                    title: Text(
-                      '${scheduledAt.day}/${scheduledAt.month}/${scheduledAt.year} '
-                      '${scheduledAt.hour.toString().padLeft(2, '0')}:${scheduledAt.minute.toString().padLeft(2, '0')}',
-                    ),
-                  ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.people),
-                  title: Text(
-                    '${_participants.length} / ${activity['max_participants'] ?? '?'} katılımcı',
-                  ),
-                ),
-                const Divider(),
-                Text(
-                  _isPast && _wasMember ? 'Katılımcıları Puanla' : 'Katılımcılar',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                ..._participants.map((p) {
-                  final userId = p['user_id']?.toString();
-                  final name = p['users']?['display_name'] ?? 'Bilinmiyor';
-                  final currentUserId = _supabase.auth.currentUser?.id;
-                  final canRate = _isPast && _wasMember && userId != null && userId != currentUserId;
-                  final myRating = userId != null ? (_myRatings[userId] ?? 0) : 0;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const CircleAvatar(child: Icon(Icons.person)),
-                    title: Text(name),
-                    subtitle: canRate
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: StarRating(
-                              value: myRating,
-                              size: 24,
-                              onChanged: (r) => _rateUser(userId, r),
-                            ),
-                          )
-                        : null,
                   );
                 }),
                     ],

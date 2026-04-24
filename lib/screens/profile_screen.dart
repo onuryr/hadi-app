@@ -7,7 +7,9 @@ import '../services/rating_service.dart';
 import 'activity_detail_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final String? userId;
+
+  const ProfileScreen({super.key, this.userId});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -29,10 +31,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   bool _saving = false;
   bool _editMode = false;
 
+  bool get _isSelf {
+    final current = _supabase.auth.currentUser?.id;
+    return widget.userId == null || widget.userId == current;
+  }
+
+  String get _viewedUserId =>
+      widget.userId ?? _supabase.auth.currentUser!.id;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: _isSelf ? 3 : 2, vsync: this);
     _loadProfile();
   }
 
@@ -45,14 +55,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Future<void> _loadProfile() async {
-    final currentUser = _supabase.auth.currentUser;
-    if (currentUser == null) {
+    if (_supabase.auth.currentUser == null) {
       setState(() => _loading = false);
       return;
     }
-    final userId = currentUser.id;
+    final userId = _viewedUserId;
     try {
-      final results = await Future.wait([
+      final baseFutures = [
         _supabase.from('users').select().eq('id', userId).single(),
         _supabase
             .from('activities')
@@ -64,12 +73,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             .select('activities(id, title, location_name, scheduled_at, max_participants, location, description, creator_id)')
             .eq('user_id', userId)
             .eq('status', 'approved'),
-        _supabase
+      ];
+      if (_isSelf) {
+        baseFutures.add(_supabase
             .from('activity_favorites')
             .select('activities(id, title, location_name, scheduled_at, max_participants, location, description)')
             .eq('user_id', userId)
-            .order('created_at', ascending: false),
-      ]);
+            .order('created_at', ascending: false));
+      }
+      final results = await Future.wait(baseFutures);
       final rating = await RatingService.getUserAverage(userId);
 
       final user = results[0] as Map<String, dynamic>;
@@ -80,11 +92,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           .whereType<Map<String, dynamic>>()
           .where((a) => a['creator_id'] != userId)
           .toList();
-      final favs = results[3] as List;
-      final favorites = favs
-          .map((f) => f['activities'] as Map<String, dynamic>?)
-          .whereType<Map<String, dynamic>>()
-          .toList();
+      final favorites = _isSelf && results.length > 3
+          ? (results[3] as List)
+              .map((f) => f['activities'] as Map<String, dynamic>?)
+              .whereType<Map<String, dynamic>>()
+              .toList()
+          : <Map<String, dynamic>>[];
 
       _nameController.text = user['display_name'] ?? '';
       _bioController.text = user['bio'] ?? '';
@@ -224,10 +237,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profilim'),
+        title: Text(_isSelf ? 'Profilim' : (_user?['display_name'] ?? 'Profil')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          if (!_loading)
+          if (_isSelf && !_loading)
             _editMode
                 ? TextButton(
                     onPressed: _saving ? null : _saveProfile,
@@ -250,7 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   child: Column(
                     children: [
                       GestureDetector(
-                        onTap: _pickAndUploadAvatar,
+                        onTap: _isSelf ? _pickAndUploadAvatar : null,
                         child: Stack(
                           children: [
                             CircleAvatar(
@@ -265,23 +278,24 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                     )
                                   : null,
                             ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  shape: BoxShape.circle,
+                            if (_isSelf)
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  padding: const EdgeInsets.all(4),
+                                  child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
                                 ),
-                                padding: const EdgeInsets.all(4),
-                                child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
                               ),
-                            ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _editMode
+                      (_editMode && _isSelf)
                           ? TextField(
                               controller: _nameController,
                               textAlign: TextAlign.center,
@@ -310,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         ),
                       ],
                       const SizedBox(height: 8),
-                      _editMode
+                      (_editMode && _isSelf)
                           ? TextField(
                               controller: _bioController,
                               textAlign: TextAlign.center,
@@ -321,11 +335,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                 hintText: 'Kendinden bahset...',
                               ),
                             )
-                          : Text(
-                              _user?['bio'] ?? '',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
+                          : Builder(builder: (_) {
+                              final bio = (_user?['bio'] as String?)?.trim() ?? '';
+                              if (bio.isEmpty) {
+                                return Text(
+                                  _isSelf ? 'Hakkımda kısmı boş' : 'Henüz bir şey yazmamış',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                                );
+                              }
+                              return Text(
+                                bio,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.black87),
+                              );
+                            }),
                     ],
                   ),
                 ),
@@ -333,9 +357,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   controller: _tabController,
                   isScrollable: true,
                   tabs: [
-                    Tab(text: 'Oluşturduklarım (${_createdActivities.length})'),
-                    Tab(text: 'Katıldıklarım (${_joinedActivities.length})'),
-                    Tab(text: 'Favoriler (${_favoriteActivities.length})'),
+                    Tab(text: '${_isSelf ? 'Oluşturduklarım' : 'Oluşturdukları'} (${_createdActivities.length})'),
+                    Tab(text: '${_isSelf ? 'Katıldıklarım' : 'Katıldıkları'} (${_joinedActivities.length})'),
+                    if (_isSelf)
+                      Tab(text: 'Favoriler (${_favoriteActivities.length})'),
                   ],
                 ),
                 Expanded(
@@ -344,7 +369,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     children: [
                       _buildActivityList(_createdActivities),
                       _buildActivityList(_joinedActivities),
-                      _buildActivityList(_favoriteActivities),
+                      if (_isSelf) _buildActivityList(_favoriteActivities),
                     ],
                   ),
                 ),
