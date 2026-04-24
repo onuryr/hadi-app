@@ -1,0 +1,403 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/notification_service.dart';
+import 'map_picker_screen.dart';
+
+class CreateActivityScreen extends StatefulWidget {
+  final Map<String, dynamic>? existing;
+  final LatLng? existingLocation;
+  final bool lockCategory;
+
+  const CreateActivityScreen({
+    super.key,
+    this.existing,
+    this.existingLocation,
+    this.lockCategory = false,
+  });
+
+  @override
+  State<CreateActivityScreen> createState() => _CreateActivityScreenState();
+}
+
+class _CreateActivityScreenState extends State<CreateActivityScreen> {
+  final _supabase = Supabase.instance.client;
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _locationNameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  int _selectedCategory = 1;
+  int _maxParticipants = 10;
+  DateTime _scheduledAt = DateTime.now().add(const Duration(days: 1));
+  LatLng? _selectedLocation;
+  XFile? _selectedImage;
+  String? _existingImageUrl;
+  bool _loading = false;
+
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    if (e != null) {
+      _titleController.text = e['title'] ?? '';
+      _descriptionController.text = e['description'] ?? '';
+      _locationNameController.text = e['location_name'] ?? '';
+      _selectedCategory = e['category_id'] ?? 1;
+      _maxParticipants = e['max_participants'] ?? 10;
+      if (e['scheduled_at'] != null) {
+        _scheduledAt = DateTime.parse(e['scheduled_at']).toLocal();
+      }
+      _existingImageUrl = e['image_url'];
+      _selectedLocation = widget.existingLocation;
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 1200,
+    );
+    if (image != null) setState(() => _selectedImage = image);
+  }
+
+  String? _buildChangeSummary() {
+    final e = widget.existing;
+    if (e == null) return null;
+    final changes = <String>[];
+
+    if ((e['title'] ?? '') != _titleController.text.trim()) changes.add('başlık');
+    if ((e['description'] ?? '') != _descriptionController.text.trim()) changes.add('açıklama');
+    if ((e['location_name'] ?? '') != _locationNameController.text.trim()) changes.add('konum adı');
+    if ((e['max_participants'] ?? 0) != _maxParticipants) changes.add('katılımcı sayısı');
+
+    final origDate = e['scheduled_at'] != null ? DateTime.parse(e['scheduled_at']).toLocal() : null;
+    if (origDate == null || origDate != _scheduledAt) changes.add('tarih/saat');
+
+    if (widget.existingLocation != null &&
+        (widget.existingLocation!.latitude != _selectedLocation?.latitude ||
+            widget.existingLocation!.longitude != _selectedLocation?.longitude)) {
+      changes.add('konum');
+    }
+
+    if (_selectedImage != null) changes.add('resim');
+
+    if (changes.isEmpty) return null;
+    if (changes.length == 1) return '${changes.first} değişti';
+    final last = changes.removeLast();
+    return '${changes.join(', ')} ve $last değişti';
+  }
+
+  Future<String?> _uploadImage(String activityId) async {
+    if (_selectedImage == null) return null;
+    final ext = _selectedImage!.path.split('.').last.toLowerCase();
+    final path = '$activityId/cover.$ext';
+    await _supabase.storage.from('activity-images').upload(
+          path,
+          File(_selectedImage!.path),
+          fileOptions: const FileOptions(upsert: true),
+        );
+    return _supabase.storage.from('activity-images').getPublicUrl(path);
+  }
+
+  final _categories = [
+    {'id': 1, 'name': 'Yürüyüş'},
+    {'id': 2, 'name': 'Koşu'},
+    {'id': 3, 'name': 'Halı Saha'},
+    {'id': 4, 'name': 'Basketbol'},
+    {'id': 5, 'name': 'Bisiklet'},
+    {'id': 6, 'name': 'Konser'},
+    {'id': 7, 'name': 'Tiyatro'},
+    {'id': 8, 'name': 'Yemek'},
+    {'id': 9, 'name': 'Müze'},
+    {'id': 10, 'name': 'Sinema'},
+  ];
+
+  Future<void> _pickLocation() async {
+    final result = await Navigator.of(context).push<MapPickerResult>(
+      MaterialPageRoute(
+        builder: (_) => MapPickerScreen(initialLocation: _selectedLocation),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _selectedLocation = result.location;
+        if (_locationNameController.text.trim().isEmpty && result.suggestedName != null) {
+          _locationNameController.text = result.suggestedName!;
+        }
+      });
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _scheduledAt,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_scheduledAt),
+      );
+      if (time != null) {
+        setState(() {
+          _scheduledAt = DateTime(
+            date.year, date.month, date.day, time.hour, time.minute,
+          );
+        });
+      }
+    }
+  }
+
+  Future<void> _createActivity() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _loading = true);
+    try {
+      final userId = _supabase.auth.currentUser!.id;
+
+      if (_selectedLocation == null) {
+        setState(() => _loading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Lütfen haritadan konum seçin')),
+          );
+        }
+        return;
+      }
+
+      final payload = {
+        'category_id': _selectedCategory,
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'location_name': _locationNameController.text.trim(),
+        'scheduled_at': _scheduledAt.toIso8601String(),
+        'max_participants': _maxParticipants,
+        'location': 'POINT(${_selectedLocation!.longitude} ${_selectedLocation!.latitude})',
+      };
+
+      String activityId;
+      if (_isEdit) {
+        activityId = widget.existing!['id'].toString();
+        await _supabase.from('activities').update(payload).eq('id', activityId);
+      } else {
+        final inserted = await _supabase.from('activities').insert({
+          ...payload,
+          'creator_id': userId,
+          'status': 'active',
+        }).select('id').single();
+        activityId = inserted['id'].toString();
+        await _supabase.from('activity_participants').insert({
+          'activity_id': activityId,
+          'user_id': userId,
+          'status': 'approved',
+        });
+      }
+
+      if (_selectedImage != null) {
+        final imageUrl = await _uploadImage(activityId);
+        if (imageUrl != null) {
+          await _supabase.from('activities').update({'image_url': imageUrl}).eq('id', activityId);
+        }
+      }
+
+      if (_isEdit) {
+        final changes = _buildChangeSummary();
+        await NotificationService.notifyActivityUpdated(
+          activityId,
+          _titleController.text.trim(),
+          changes: changes,
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Aktivite oluşturuldu!')),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_isEdit ? 'Aktiviteyi Düzenle' : 'Aktivite Oluştur'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                height: 180,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                  image: _selectedImage != null
+                      ? DecorationImage(
+                          image: FileImage(File(_selectedImage!.path)),
+                          fit: BoxFit.cover,
+                        )
+                      : (_existingImageUrl != null
+                          ? DecorationImage(
+                              image: NetworkImage(_existingImageUrl!),
+                              fit: BoxFit.cover,
+                            )
+                          : null),
+                ),
+                child: (_selectedImage == null && _existingImageUrl == null)
+                    ? const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate, size: 48, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text('Resim ekle (opsiyonel)', style: TextStyle(color: Colors.grey)),
+                          Text('Seçmezsen kategori resmi kullanılır',
+                              style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        ],
+                      )
+                    : Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.black54,
+                            child: IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.white),
+                              onPressed: _pickImage,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Başlık',
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) => v!.isEmpty ? 'Başlık gerekli' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _locationNameController,
+              decoration: const InputDecoration(
+                labelText: 'Konum adı',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.location_on),
+              ),
+              validator: (v) => v!.isEmpty ? 'Konum gerekli' : null,
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _pickLocation,
+              icon: const Icon(Icons.map),
+              label: Text(
+                _selectedLocation == null
+                    ? 'Haritadan konum seç'
+                    : 'Konum seçildi: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}',
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                alignment: Alignment.centerLeft,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Açıklama (opsiyonel)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<int>(
+              value: _selectedCategory,
+              decoration: InputDecoration(
+                labelText: 'Kategori',
+                border: const OutlineInputBorder(),
+                helperText: widget.lockCategory
+                    ? 'Katılımcı olduğu için kategori değiştirilemez'
+                    : null,
+                suffixIcon: widget.lockCategory ? const Icon(Icons.lock, size: 18) : null,
+              ),
+              items: _categories.map((c) {
+                return DropdownMenuItem<int>(
+                  value: c['id'] as int,
+                  child: Text(c['name'] as String),
+                );
+              }).toList(),
+              onChanged: widget.lockCategory ? null : (v) => setState(() => _selectedCategory = v!),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Tarih & Saat'),
+              subtitle: Text(
+                '${_scheduledAt.day}/${_scheduledAt.month}/${_scheduledAt.year} '
+                '${_scheduledAt.hour.toString().padLeft(2, '0')}:${_scheduledAt.minute.toString().padLeft(2, '0')}',
+              ),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: _pickDate,
+            ),
+            const Divider(),
+            Row(
+              children: [
+                const Text('Maksimum katılımcı:'),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.remove),
+                  onPressed: _maxParticipants > 2
+                      ? () => setState(() => _maxParticipants--)
+                      : null,
+                ),
+                Text('$_maxParticipants',
+                    style: const TextStyle(fontSize: 18)),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _maxParticipants < 100
+                      ? () => setState(() => _maxParticipants++)
+                      : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _loading ? null : _createActivity,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: _loading
+                  ? const CircularProgressIndicator()
+                  : Text(_isEdit ? 'Güncelle' : 'Oluştur'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
