@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<List<Map<String, dynamic>>> _fetchPage(int page) async {
+  Future<(List<Map<String, dynamic>>, bool)> _fetchPage(int page) async {
     if (_cachedLat == null) {
       final position = await _getLocation();
       _cachedLat = position?.latitude ?? 41.0082;
@@ -154,9 +154,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final uri = Uri.parse('$_apiBase/api/activities/nearby').replace(queryParameters: params);
     final response = await http.get(uri).timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) throw Exception('Sunucu hatası: ${response.statusCode}');
-    final decoded = jsonDecode(response.body);
-    final List<dynamic> data = decoded is Map ? (decoded['items'] as List? ?? []) : decoded as List;
-    return data.map<Map<String, dynamic>>((item) => {
+    final Map<String, dynamic> decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final List<dynamic> data = decoded['items'] as List<dynamic>;
+    final bool hasMore = decoded['hasMore'] as bool? ?? false;
+    final items = data.map<Map<String, dynamic>>((item) => {
       'id': item['id'],
       'title': item['title'],
       'location_name': item['locationName'],
@@ -171,19 +172,22 @@ class _HomeScreenState extends State<HomeScreen> {
       'image_url': item['imageUrl'],
       'category_id': categoryNameToId[item['categoryName'] as String? ?? ''],
     }).toList();
+    return (items, hasMore);
   }
 
   Future<void> _loadActivities() async {
     setState(() { _loading = true; _error = null; _page = 1; });
     try {
-      final results = await Future.wait([_fetchPage(1), FavoritesService.getFavoriteIds()]);
-      final items = results[0] as List<Map<String, dynamic>>;
-      final favs = results[1] as Set<String>;
+      final (pageResult, favs) = await (
+        _fetchPage(1),
+        FavoritesService.getFavoriteIds(),
+      ).wait;
+      final (items, hasMore) = pageResult;
       setState(() {
         _activities = items;
         _favoriteIds = favs;
         _page = 1;
-        _hasMore = items.length == _pageSize;
+        _hasMore = hasMore;
         _loading = false;
       });
       _refreshUnread();
@@ -212,11 +216,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_loadingMore || !_hasMore) return;
     setState(() => _loadingMore = true);
     try {
-      final items = await _fetchPage(_page + 1);
+      final (items, hasMore) = await _fetchPage(_page + 1);
       setState(() {
         _activities.addAll(items);
         _page++;
-        _hasMore = items.length == _pageSize;
+        _hasMore = hasMore;
         _loadingMore = false;
       });
     } catch (_) {
