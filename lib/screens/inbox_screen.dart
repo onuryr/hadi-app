@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../services/chat_service.dart';
+import '../services/deep_link_service.dart';
 import '../utils/category_defaults.dart';
 import 'chat_screen.dart';
 
@@ -29,6 +31,21 @@ class _InboxScreenState extends State<InboxScreen> {
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _shareActivity(Map<String, dynamic> activity) async {
+    final activityId = activity['id'].toString();
+    final title = activity['title'] ?? '';
+    final locationName = activity['location_name'] ?? '';
+    final scheduledAt = activity['scheduled_at'];
+    String date = '';
+    if (scheduledAt != null) {
+      final dt = DateTime.parse(scheduledAt).toLocal();
+      date = '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+    final link = DeepLinkService.activityUrl(activityId);
+    final text = '🎉 $title\n📅 $date\n📍 $locationName\n\nHadi, aktiviteye katıl:\n$link';
+    await Share.share(text);
   }
 
   String _formatTime(String createdAt) {
@@ -133,6 +150,7 @@ class _InboxScreenState extends State<InboxScreen> {
                           );
                           _load();
                         },
+                        onLongPress: () => _shareActivity(activity),
                       );
                     },
                   ),
