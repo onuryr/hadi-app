@@ -43,7 +43,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   bool get _isPast {
     final sa = _fullActivity['scheduled_at'];
     if (sa == null) return false;
-    return DateTime.parse(sa).toLocal().isBefore(DateTime.now());
+    // "exactly now" is treated as past per spec (now >= startTime → past)
+    return !DateTime.now().isBefore(DateTime.parse(sa).toLocal());
   }
 
   bool get _isCancelled => _fullActivity['status'] == 'inactive';
@@ -556,8 +557,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                 if (value == 'delete') _deleteActivity();
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(
-                    value: 'edit', child: Text('Düzenle')),
+                if (!_isPast)
+                  const PopupMenuItem(
+                      value: 'edit', child: Text('Düzenle')),
                 if (!_isPast && !_isCancelled)
                   const PopupMenuItem(
                     value: 'cancel',
