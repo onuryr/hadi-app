@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_localizations.dart';
 import '../services/notification_service.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
@@ -46,11 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final l = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     if (email.isEmpty || password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email ve en az 6 karakterli şifre gir')),
+        SnackBar(content: Text(l.emailPasswordRequired)),
       );
       return;
     }
@@ -78,25 +80,25 @@ class _LoginScreenState extends State<LoginScreen> {
           if (mounted) {
             setState(() => _awaitingOtp = true);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Doğrulama kodu tekrar gönderildi')),
+              SnackBar(content: Text(l.verificationCodeResent)),
             );
           }
         } catch (_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Hata: ${e.message}')),
+              SnackBar(content: Text(l.genericError)),
             );
           }
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: ${e.message}')),
+          SnackBar(content: Text(l.genericError)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text(l.genericError)),
         );
       }
     } finally {
@@ -105,6 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _verifyOtp() async {
+    final l = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final otp = _otpController.text.trim();
     if (otp.isEmpty) return;
@@ -122,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Kod hatalı: $e')),
+          SnackBar(content: Text(l.invalidCodeError)),
         );
       }
     } finally {
@@ -132,6 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -146,20 +150,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Etkinlik bul, insanlarla tanış',
+              Text(
+                l.loginSubtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF616161)),
+                style: const TextStyle(color: Color(0xFF616161)),
               ),
               const SizedBox(height: 48),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 enabled: !_awaitingOtp,
-                decoration: const InputDecoration(
-                  labelText: 'E-posta',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
+                decoration: InputDecoration(
+                  labelText: l.emailLabel,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.email),
                 ),
               ),
               const SizedBox(height: 16),
@@ -168,10 +172,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Şifre',
+                    labelText: l.passwordLabel,
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.lock),
-                    helperText: _isSignup ? 'En az 6 karakter' : null,
+                    helperText: _isSignup ? l.passwordHelperText : null,
                     suffixIcon: IconButton(
                       icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
                       onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -198,11 +202,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _otpController,
                   keyboardType: TextInputType.number,
                   maxLength: 8,
-                  decoration: const InputDecoration(
-                    labelText: 'Doğrulama kodu',
-                    helperText: 'Email adresine gelen kodu gir',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.pin),
+                  decoration: InputDecoration(
+                    labelText: l.verificationCodeLabel,
+                    helperText: l.verificationCodeHelper,
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.pin),
                   ),
                 ),
               const SizedBox(height: 24),
@@ -214,8 +218,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: _loading
                     ? const CircularProgressIndicator()
                     : Text(_awaitingOtp
-                        ? 'Doğrula'
-                        : (_isSignup ? 'Kayıt Ol' : 'Giriş Yap')),
+                        ? l.verifyButton
+                        : (_isSignup ? l.registerButton : l.loginButton)),
               ),
               const SizedBox(height: 12),
               if (!_awaitingOtp)
@@ -224,8 +228,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? null
                       : () => setState(() => _isSignup = !_isSignup),
                   child: Text(_isSignup
-                      ? 'Hesabın var mı? Giriş yap'
-                      : 'Hesabın yok mu? Kayıt ol'),
+                      ? l.haveAccountPrompt
+                      : l.noAccountPrompt),
                 ),
               if (_awaitingOtp)
                 TextButton(
@@ -235,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             _awaitingOtp = false;
                             _otpController.clear();
                           }),
-                  child: const Text('Geri dön'),
+                  child: Text(l.backButton),
                 ),
             ],
           ),

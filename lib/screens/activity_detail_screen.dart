@@ -12,6 +12,7 @@ import '../services/notification_service.dart';
 import '../services/rating_service.dart';
 import '../services/participant_service.dart';
 import '../services/report_block_service.dart';
+import '../l10n/app_localizations.dart';
 import '../utils/category_defaults.dart';
 import '../widgets/star_rating.dart';
 import 'chat_screen.dart';
@@ -150,22 +151,25 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _deleteActivity() async {
+    final l = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Aktiviteyi sil?'),
-        content: const Text(
-            'Bu aktivite ve tüm katılımcıları kalıcı olarak silinecek. Emin misin?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('İptal')),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Sil', style: TextStyle(color: Color(0xFFB3261E))),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final lCtx = AppLocalizations.of(ctx)!;
+        return AlertDialog(
+          title: Text(lCtx.deleteDialogTitle),
+          content: Text(lCtx.deleteDialogContent),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(lCtx.cancelButton)),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(lCtx.deleteConfirmButton, style: const TextStyle(color: Color(0xFFB3261E))),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
 
@@ -183,14 +187,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aktivite silindi')),
+          SnackBar(content: Text(l.activityDeletedSuccess)),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _deleting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Silme hatası: $e')),
+          SnackBar(content: Text(l.deleteError)),
         );
       }
     }
@@ -286,10 +290,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _joinActivity() async {
+    final l = AppLocalizations.of(context)!;
     final max = _fullActivity['max_participants'] as int?;
     if (max != null && _approvedParticipants.length >= max) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aktivite dolu, katılamazsın')),
+        SnackBar(content: Text(l.activityFullMessage)),
       );
       return;
     }
@@ -313,13 +318,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Katılım isteğiniz gönderildi')),
+          SnackBar(content: Text(l.joinedActivity)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text(l.genericError)),
         );
       }
     } finally {
@@ -328,6 +333,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _leaveActivity() async {
+    final l = AppLocalizations.of(context)!;
     setState(() => _leaving = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
@@ -347,13 +353,13 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aktiviteden ayrıldınız')),
+          SnackBar(content: Text(l.leftActivity)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text(l.genericError)),
         );
       }
     } finally {
@@ -472,6 +478,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       _participants.where((p) => p['status'] == 'pending').toList();
 
   List<Widget> _buildRatingSection() {
+    final l = AppLocalizations.of(context)!;
     final currentUserId = _supabase.auth.currentUser?.id;
     final others = _participants
         .where(
@@ -481,14 +488,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     return [
       const SizedBox(height: 16),
       const Divider(),
-      const Text(
-        'Puan Ver',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      Text(
+        l.rateParticipantsTitle,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
       const SizedBox(height: 8),
       ...others.map((p) {
         final userId = p['user_id'].toString();
-        final name = p['users']?['display_name'] ?? 'Bilinmiyor';
+        final name = p['users']?['display_name'] ?? l.unknownParticipant;
         final avatarUrl = p['users']?['avatar_url'] as String?;
         final myRating = _myRatings[userId] ?? 0;
         return ListTile(
@@ -519,6 +526,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final activity = _fullActivity;
     final scheduledAt = activity['scheduled_at'] != null
         ? DateTime.parse(activity['scheduled_at'])
@@ -540,7 +548,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               _isFavorite ? Icons.favorite : Icons.favorite_border,
               color: _isFavorite ? Colors.red : null,
             ),
-            tooltip: 'Favori',
+            tooltip: l.favouriteTooltip,
             onPressed: _toggleFavorite,
           ),
           IconButton(
@@ -695,7 +703,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         ..._pendingParticipants.map((p) {
                           final pUserId = p['user_id']?.toString() ?? '';
                           final pName =
-                              p['users']?['display_name'] ?? 'Bilinmiyor';
+                              p['users']?['display_name'] ?? l.unknownParticipant;
                           final pAvatarUrl =
                               p['users']?['avatar_url'] as String?;
                           final isThisProcessing =
@@ -764,16 +772,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         }),
                       ],
                       const Divider(),
-                      const Text(
-                        'Katılımcılar',
-                        style: TextStyle(
+                      Text(
+                        l.participantsTitle,
+                        style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       ..._approvedParticipants.map((p) {
                         final userId = p['user_id']?.toString();
                         final name =
-                            p['users']?['display_name'] ?? 'Bilinmiyor';
+                            p['users']?['display_name'] ?? l.unknownParticipant;
                         final avatarUrl =
                             p['users']?['avatar_url'] as String?;
                         return ListTile(
@@ -843,7 +851,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 }
                               },
                               icon: const Icon(Icons.directions),
-                              label: const Text('Yol Tarifi Al'),
+                              label: Text(l.getDirectionsButton),
                             ),
                             const SizedBox(height: 8),
                           ],
@@ -877,7 +885,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           ),
                           child: _leaving
                               ? const CircularProgressIndicator()
-                              : const Text('Ayrıl'),
+                              : Text(l.leaveButton),
                         )
                       : ElevatedButton(
                           onPressed: _joining ? null : _joinActivity,
@@ -887,7 +895,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           ),
                           child: _joining
                               ? const CircularProgressIndicator()
-                              : const Text('Katıl'),
+                              : Text(l.joinButton),
                         ),
             ),
     );

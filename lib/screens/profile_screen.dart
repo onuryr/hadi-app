@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_localizations.dart';
 import '../services/deep_link_service.dart';
 import '../services/rating_service.dart';
 import '../services/report_block_service.dart';
@@ -122,6 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Future<void> _saveProfile() async {
+    final l = AppLocalizations.of(context)!;
     setState(() => _saving = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
@@ -135,13 +137,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil güncellendi')),
+          SnackBar(content: Text(l.profileUpdated)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text(l.profileUpdateError)),
         );
       }
     } finally {
@@ -169,13 +171,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       setState(() => _user = {...?_user, 'avatar_url': url});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fotoğraf güncellendi')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.photoUpdated)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fotoğraf yüklenemedi: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.photoUploadError)),
         );
       }
     }
@@ -210,7 +212,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Widget _buildActivityList(List<Map<String, dynamic>> activities) {
     if (activities.isEmpty) {
-      return const Center(child: Text('Henüz aktivite yok'));
+      return Center(child: Text(AppLocalizations.of(context)!.noActivitiesYet));
     }
     final sorted = [...activities]
       ..sort((a, b) {
@@ -252,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text('Tamamlandı',
+                      child: Text(AppLocalizations.of(context)!.completedBadge,
                           style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     )
                   : const Icon(Icons.chevron_right),
@@ -267,9 +269,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isSelf ? 'Profilim' : (_user?['display_name'] ?? 'Profil')),
+        title: Text(_isSelf ? l.profileTitle : (_user?['display_name'] ?? 'Profil')),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_isSelf && !_loading)
@@ -278,11 +281,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     onPressed: _saving ? null : _saveProfile,
                     child: _saving
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+                        : Text(l.saveButton, style: const TextStyle(fontWeight: FontWeight.bold)),
                   )
                 : IconButton(
                     icon: const Icon(Icons.edit),
-                    tooltip: 'Düzenle',
+                    tooltip: l.editTooltip,
                     onPressed: () => setState(() => _editMode = true),
                   ),
           if (_isSelf && !_loading)
@@ -385,9 +388,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               controller: _nameController,
                               textAlign: TextAlign.center,
                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                              decoration: const InputDecoration(
-                                labelText: 'Ad',
-                                border: OutlineInputBorder(),
+                              decoration: InputDecoration(
+                                labelText: l.nameLabel,
+                                border: const OutlineInputBorder(),
                               ),
                             )
                           : Text(
@@ -402,7 +405,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             const Icon(Icons.star, color: Colors.amber, size: 18),
                             const SizedBox(width: 4),
                             Text(
-                              '${_avgRating.toStringAsFixed(1)} ($_ratingCount değerlendirme)',
+                              '${_avgRating.toStringAsFixed(1)} (${l.ratingsCount(_ratingCount)})',
                               style: const TextStyle(color: Colors.grey),
                             ),
                           ],
@@ -414,17 +417,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               controller: _bioController,
                               textAlign: TextAlign.center,
                               maxLines: 3,
-                              decoration: const InputDecoration(
-                                labelText: 'Hakkımda',
-                                border: OutlineInputBorder(),
-                                hintText: 'Kendinden bahset...',
+                              decoration: InputDecoration(
+                                labelText: l.bioLabel,
+                                border: const OutlineInputBorder(),
+                                hintText: l.bioHint,
                               ),
                             )
                           : Builder(builder: (_) {
                               final bio = (_user?['bio'] as String?)?.trim() ?? '';
                               if (bio.isEmpty) {
                                 return Text(
-                                  _isSelf ? 'Hakkımda kısmı boş' : 'Henüz bir şey yazmamış',
+                                  _isSelf ? l.bioLabel : 'Henüz bir şey yazmamış',
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                                 );
@@ -441,10 +444,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   controller: _tabController,
                   isScrollable: true,
                   tabs: [
-                    Tab(text: '${_isSelf ? 'Oluşturduklarım' : 'Oluşturdukları'} (${_createdActivities.length})'),
-                    Tab(text: '${_isSelf ? 'Katıldıklarım' : 'Katıldıkları'} (${_joinedActivities.length})'),
+                    Tab(text: '${_isSelf ? l.createdActivitiesTab : 'Oluşturdukları'} (${_createdActivities.length})'),
+                    Tab(text: '${_isSelf ? l.joinedActivitiesTab : 'Katıldıkları'} (${_joinedActivities.length})'),
                     if (_isSelf)
-                      Tab(text: 'Favoriler (${_favoriteActivities.length})'),
+                      Tab(text: '${l.favoritesTab} (${_favoriteActivities.length})'),
                   ],
                 ),
                 Expanded(

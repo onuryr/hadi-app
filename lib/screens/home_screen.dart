@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../l10n/app_localizations.dart';
 import 'login_screen.dart';
 import 'create_activity_screen.dart';
 import 'activity_detail_screen.dart';
@@ -333,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                   if (deleted == true) _loadActivities();
                 },
-                child: const Text('Detayları Gör'),
+                child: Text(AppLocalizations.of(context)!.exploreButton),
               ),
             ),
           ],
@@ -357,6 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hadi'),
@@ -364,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(_showMap ? Icons.list : Icons.map),
-            tooltip: _showMap ? 'Liste' : 'Harita',
+            tooltip: _showMap ? l.listViewTooltip : l.mapViewTooltip,
             onPressed: () => setState(() => _showMap = !_showMap),
           ),
           Badge.count(
@@ -374,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
             offset: const Offset(-4, 4),
             child: IconButton(
               icon: const Icon(Icons.chat_bubble_outline),
-              tooltip: 'Mesajlar',
+              tooltip: l.messagesTooltip,
               onPressed: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const InboxScreen()),
@@ -389,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (_) => const ProfileScreen()),
             ),
           ),
-          IconButton(icon: const Icon(Icons.logout), tooltip: 'Çıkış yap', onPressed: _signOut),
+          IconButton(icon: const Icon(Icons.logout), tooltip: l.signOutTooltip, onPressed: _signOut),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -409,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _searchController,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Aktivite ara...',
+                hintText: l.searchHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -449,10 +451,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Text('Arama yarıçapı',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(l.searchRadiusTitle,
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                               ..._radiusOptions.map((r) => ListTile(
                                     title: Text('$r km'),
@@ -475,7 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: const Text('Tümü'),
+                    label: Text(l.allCategoriesChip),
                     selected: _selectedCategoryId == null,
                     onSelected: (_) {
                       setState(() => _selectedCategoryId = null);
@@ -512,17 +514,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const Icon(Icons.error_outline, size: 48, color: Colors.grey),
                       const SizedBox(height: 8),
-                      Text('Aktiviteler yüklenemedi', style: Theme.of(context).textTheme.titleMedium),
+                      Text(l.activitiesLoadError, style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadActivities,
-                        child: const Text('Tekrar Dene'),
+                        child: Text(l.retryButton),
                       ),
                     ],
                   ),
                 )
               : _activities.isEmpty
-                  ? const Center(child: Text('Yakında aktif aktivite bulunamadı'))
+                  ? Center(child: Text(l.noActivitiesNearby))
                   : RefreshIndicator(
                       onRefresh: _loadActivities,
                       child: ListView.builder(

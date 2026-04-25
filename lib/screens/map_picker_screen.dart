@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../l10n/app_localizations.dart';
 
 typedef MapPickerResult = ({LatLng location, String? suggestedName});
 
@@ -68,14 +69,14 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Yer bulunamadı')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.locationNotFound)),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Arama hatası: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.searchError)),
         );
       }
     } finally {
@@ -93,7 +94,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       if (permission == LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Konum izni kalıcı olarak reddedildi')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.locationPermissionDenied)),
           );
         }
         return;
@@ -109,7 +110,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Konum alınamadı: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.locationFetchError)),
         );
       }
     } finally {
@@ -124,16 +125,17 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Konum Seç'),
+        title: Text(l.mapPickerTitle),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop<MapPickerResult>(
               (location: _selectedLocation, suggestedName: _selectedName),
             ),
-            child: const Text('Seç', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(l.selectLocationButton, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -161,7 +163,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 textInputAction: TextInputAction.search,
                 onSubmitted: (_) => _searchPlace(),
                 decoration: InputDecoration(
-                  hintText: 'Yer ara (örn: Kadıköy)',
+                  hintText: l.mapPickerSearchHint,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,

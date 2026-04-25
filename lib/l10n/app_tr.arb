@@ -1,0 +1,293 @@
+{
+  "@@locale": "tr",
+
+  "loginSubtitle": "Sana en yakın aktiviteleri keşfet.",
+  "@loginSubtitle": { "description": "Subtitle on the login/register screen" },
+
+  "emailLabel": "E-posta",
+  "@emailLabel": { "description": "Email field label" },
+
+  "passwordLabel": "Şifre",
+  "@passwordLabel": { "description": "Password field label" },
+
+  "passwordHelperText": "En az 6 karakter",
+  "@passwordHelperText": { "description": "Password helper text below field" },
+
+  "verificationCodeLabel": "Doğrulama kodu",
+  "@verificationCodeLabel": { "description": "Verification code field label" },
+
+  "verificationCodeHelper": "E-posta adresine gönderilen kodu gir",
+  "@verificationCodeHelper": { "description": "Helper text below verification code field" },
+
+  "loginButton": "Hadi Giriş Yap",
+  "@loginButton": { "description": "Primary login button" },
+
+  "registerButton": "Hadi Kayıt Ol",
+  "@registerButton": { "description": "Primary register button" },
+
+  "verifyButton": "Doğrula",
+  "@verifyButton": { "description": "Verify code button" },
+
+  "haveAccountPrompt": "Zaten hesabın var mı? Giriş yap",
+  "@haveAccountPrompt": { "description": "Switch to login link" },
+
+  "noAccountPrompt": "Henüz üye değil misin? Kayıt ol",
+  "@noAccountPrompt": { "description": "Switch to register link" },
+
+  "backButton": "Geri",
+  "@backButton": { "description": "Generic back button label" },
+
+  "emailPasswordRequired": "E-posta adresini ve şifreni gir (en az 6 karakter)",
+  "@emailPasswordRequired": { "description": "Validation snackbar when email or password is missing" },
+
+  "verificationCodeResent": "Kod tekrar gönderildi! Gelen kutunu kontrol et.",
+  "@verificationCodeResent": { "description": "Success snackbar after resending verification code" },
+
+  "genericError": "Bir şeyler ters gitti — tekrar dener misin?",
+  "@genericError": { "description": "Fallback error snackbar for unexpected errors; replaces raw 'Hata: $e' pattern" },
+
+  "invalidCodeError": "Bu kod doğrulanamadı. Tekrar dene?",
+  "@invalidCodeError": { "description": "Snackbar shown when verification code is wrong" },
+
+  "searchHint": "Aktivite ara...",
+  "@searchHint": { "description": "Placeholder in the home screen search field" },
+
+  "searchRadiusTitle": "Arama yarıçapı",
+  "@searchRadiusTitle": { "description": "Modal title for radius picker" },
+
+  "allCategoriesChip": "Tümü",
+  "@allCategoriesChip": { "description": "Category filter chip showing all categories" },
+
+  "listViewTooltip": "Liste",
+  "@listViewTooltip": { "description": "Tooltip for list view icon button" },
+
+  "mapViewTooltip": "Harita",
+  "@mapViewTooltip": { "description": "Tooltip for map view icon button" },
+
+  "messagesTooltip": "Mesajlar",
+  "@messagesTooltip": { "description": "Tooltip for the messages/inbox icon button in AppBar" },
+
+  "signOutTooltip": "Çıkış yap",
+  "@signOutTooltip": { "description": "Tooltip for the sign-out icon button in AppBar" },
+
+  "activitiesLoadError": "Aktiviteler şu an yüklenemiyor 😕",
+  "@activitiesLoadError": { "description": "Error state message when activity list fails to load" },
+
+  "retryButton": "Tekrar Dene",
+  "@retryButton": { "description": "Generic retry button" },
+
+  "noActivitiesNearby": "Çevrende henüz aktif aktivite yok. İlkini sen oluştursana? 🙌",
+  "@noActivitiesNearby": { "description": "Empty state on home screen when no activities are nearby" },
+
+  "exploreButton": "Keşfet",
+  "@exploreButton": { "description": "Button on activity card to view details (replaces 'Detayları Gör')" },
+
+  "participantCount": "{count} katılımcı",
+  "@participantCount": {
+    "description": "Participant count label on activity cards and detail page",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "categoryWalk": "Yürüyüş",
+  "categoryRun": "Koşu",
+  "categoryFootball": "Halı Saha",
+  "categoryBasketball": "Basketbol",
+  "categoryCycling": "Bisiklet",
+  "categoryConcert": "Konser",
+  "categoryTheatre": "Tiyatro",
+  "categoryFood": "Yemek",
+  "categoryMuseum": "Müze",
+  "categoryCinema": "Sinema",
+
+  "createActivityTitle": "Aktivite Oluştur",
+  "@createActivityTitle": { "description": "AppBar title on create activity screen" },
+
+  "editActivityTitle": "Aktiviteyi Düzenle",
+  "@editActivityTitle": { "description": "AppBar title on edit activity screen" },
+
+  "activityTitleLabel": "Başlık",
+  "@activityTitleLabel": { "description": "Title field label on create/edit activity screen" },
+
+  "titleRequired": "Bir başlık eklemeyi unutma",
+  "@titleRequired": { "description": "Inline validation when activity title is empty" },
+
+  "locationNameLabel": "Konum adı",
+  "@locationNameLabel": { "description": "Location name field label" },
+
+  "locationRequired": "Haritadan bir konum seçmelisin",
+  "@locationRequired": { "description": "Inline validation when no location is picked" },
+
+  "pickLocationButton": "Haritadan konum seç",
+  "@pickLocationButton": { "description": "Button to open map picker" },
+
+  "locationSelected": "Konum seçildi: {coordinates}",
+  "@locationSelected": {
+    "description": "Button label after a location is picked, showing coordinates",
+    "placeholders": { "coordinates": { "type": "String" } }
+  },
+
+  "descriptionLabel": "Açıklama (opsiyonel)",
+  "@descriptionLabel": { "description": "Description field label" },
+
+  "categoryLabel": "Kategori",
+  "@categoryLabel": { "description": "Category dropdown label" },
+
+  "categoryLocked": "Katılımcı olduğu için kategori artık değiştirilemiyor",
+  "@categoryLocked": { "description": "Helper shown when category can't be changed because participants have joined" },
+
+  "addImagePrompt": "Bir fotoğraf ekle (opsiyonel)",
+  "@addImagePrompt": { "description": "Image upload section heading" },
+
+  "addImageHelper": "Seçmezsen kategori görseli kullanılır",
+  "@addImageHelper": { "description": "Helper text below image upload prompt" },
+
+  "dateTimeLabel": "Tarih & Saat",
+  "@dateTimeLabel": { "description": "Date & time row label" },
+
+  "maxParticipantsLabel": "Maksimum katılımcı:",
+  "@maxParticipantsLabel": { "description": "Max participants row label" },
+
+  "createButton": "Hadi Oluştur!",
+  "@createButton": { "description": "Submit button on create activity screen" },
+
+  "updateButton": "Değişiklikleri Kaydet",
+  "@updateButton": { "description": "Submit button on edit activity screen (replaces 'Güncelle')" },
+
+  "locationPickRequired": "Konum seçmeyi unutma — haritadan bir nokta işaretle",
+  "@locationPickRequired": { "description": "Snackbar shown when user tries to submit without picking a location" },
+
+  "activityCreatedSuccess": "Aktivite oluşturuldu! Herkesi bekliyor 🎉",
+  "@activityCreatedSuccess": { "description": "Success snackbar after creating an activity" },
+
+  "deleteDialogTitle": "Bu aktiviteyi silmek istiyor musun?",
+  "@deleteDialogTitle": { "description": "Title of the delete confirmation dialog" },
+
+  "deleteDialogContent": "Bu aktivite ve katılımcı listesi kalıcı olarak silinecek. Bu işlem geri alınamaz.",
+  "@deleteDialogContent": { "description": "Body of the delete confirmation dialog" },
+
+  "cancelButton": "İptal",
+  "@cancelButton": { "description": "Cancel button in dialogs" },
+
+  "deleteConfirmButton": "Evet, Sil",
+  "@deleteConfirmButton": { "description": "Confirm delete button — explicit phrasing reduces accidental taps" },
+
+  "activityDeletedSuccess": "Aktivite silindi.",
+  "@activityDeletedSuccess": { "description": "Snackbar after successfully deleting an activity" },
+
+  "deleteError": "Silerken bir hata oluştu — tekrar dener misin?",
+  "@deleteError": { "description": "Snackbar when delete fails" },
+
+  "ratingSubmitted": "Puanın kaydedildi, teşekkürler! 🌟",
+  "@ratingSubmitted": { "description": "Snackbar after submitting a rating" },
+
+  "activityFullMessage": "Bu aktivitede yer kalmadı 😕",
+  "@activityFullMessage": { "description": "Snackbar when user tries to join a full activity" },
+
+  "joinedActivity": "Katıldın! Görüşürüz 🙌",
+  "@joinedActivity": { "description": "Snackbar after successfully joining an activity" },
+
+  "leftActivity": "Ayrıldın. Başka zaman görüşürüz!",
+  "@leftActivity": { "description": "Snackbar after leaving an activity" },
+
+  "favouriteTooltip": "Favori",
+  "@favouriteTooltip": { "description": "Tooltip for the favourite icon button" },
+
+  "editTooltip": "Düzenle",
+  "@editTooltip": { "description": "Tooltip for the edit icon button" },
+
+  "deleteTooltip": "Aktiviteyi sil",
+  "@deleteTooltip": { "description": "Tooltip for the delete icon button" },
+
+  "getDirectionsButton": "Yol Tarifi Al",
+  "@getDirectionsButton": { "description": "Button to open navigation to activity location" },
+
+  "rateParticipantsTitle": "Katılımcıları Puanla",
+  "@rateParticipantsTitle": { "description": "Section heading when current user is organiser and can rate" },
+
+  "participantsTitle": "Katılımcılar",
+  "@participantsTitle": { "description": "Section heading for participant list (non-organiser view)" },
+
+  "unknownParticipant": "Bilinmiyor",
+  "@unknownParticipant": { "description": "Fallback name when participant display name is null" },
+
+  "leaveButton": "Ayrıl",
+  "@leaveButton": { "description": "Button to leave an activity" },
+
+  "joinButton": "Hadi Katıl!",
+  "@joinButton": { "description": "Primary CTA button to join an activity" },
+
+  "profileTitle": "Profilim",
+  "@profileTitle": { "description": "AppBar title on profile screen" },
+
+  "saveButton": "Kaydet",
+  "@saveButton": { "description": "Save button on profile screen" },
+
+  "nameLabel": "Ad",
+  "@nameLabel": { "description": "Name field label on profile screen" },
+
+  "bioLabel": "Hakkımda",
+  "@bioLabel": { "description": "Bio field label on profile screen" },
+
+  "bioHint": "Kendinden biraz bahset...",
+  "@bioHint": { "description": "Placeholder text in bio field" },
+
+  "profileUpdated": "Profil güncellendi!",
+  "@profileUpdated": { "description": "Snackbar after profile save succeeds" },
+
+  "profileUpdateError": "Profil güncellenemedi — tekrar dener misin?",
+  "@profileUpdateError": { "description": "Snackbar when profile save fails" },
+
+  "photoUpdated": "Fotoğraf güncellendi!",
+  "@photoUpdated": { "description": "Snackbar after photo upload succeeds" },
+
+  "photoUploadError": "Fotoğraf yüklenemedi — tekrar dener misin?",
+  "@photoUploadError": { "description": "Snackbar when photo upload fails" },
+
+  "noActivitiesYet": "Henüz aktivite yok. Hadi başlayalım! 🚀",
+  "@noActivitiesYet": { "description": "Empty state on profile tabs (created/joined/favourites)" },
+
+  "completedBadge": "Tamamlandı",
+  "@completedBadge": { "description": "Status badge on past activities" },
+
+  "createdActivitiesTab": "Oluşturduklarım",
+  "@createdActivitiesTab": { "description": "Profile tab: activities the user created" },
+
+  "joinedActivitiesTab": "Katıldıklarım",
+  "@joinedActivitiesTab": { "description": "Profile tab: activities the user joined" },
+
+  "favoritesTab": "Favoriler",
+  "@favoritesTab": { "description": "Profile tab: favourited activities" },
+
+  "ratingsCount": "{count} değerlendirme",
+  "@ratingsCount": {
+    "description": "Rating count label on profile screen",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "mapPickerTitle": "Konum Seç",
+  "@mapPickerTitle": { "description": "AppBar title on map picker screen" },
+
+  "mapPickerSearchHint": "Yer ara (örn: Kadıköy)",
+  "@mapPickerSearchHint": { "description": "Placeholder in map picker search field" },
+
+  "selectLocationButton": "Bu Konumu Seç",
+  "@selectLocationButton": { "description": "Confirm button on map picker (replaces bare 'Seç')" },
+
+  "locationNotFound": "Bu arama için sonuç bulunamadı — başka bir şey dene",
+  "@locationNotFound": { "description": "Snackbar when place search returns no results" },
+
+  "searchError": "Arama sırasında bir hata oluştu — tekrar dener misin?",
+  "@searchError": { "description": "Snackbar when place search throws an error" },
+
+  "locationPermissionDenied": "Konum iznine ihtiyacımız var — Ayarlar'dan izin verebilirsin",
+  "@locationPermissionDenied": { "description": "Snackbar when location permission is permanently denied" },
+
+  "locationFetchError": "Konumun alınamadı — tekrar dener misin?",
+  "@locationFetchError": { "description": "Snackbar when getting device location fails" },
+
+  "notificationChannelName": "Hadi Bildirimleri",
+  "@notificationChannelName": { "description": "Android notification channel name" },
+
+  "notificationChannelDescription": "Aktivite güncellemeleri ve bildirimler",
+  "@notificationChannelDescription": { "description": "Android notification channel description" }
+}
