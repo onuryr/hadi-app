@@ -10,6 +10,13 @@ Bu dosya, repo üzerinde çalışan AI agent'larının (Paperclip, Claude, vb.) 
 - **Branch protection açık** — main'e direkt push yasak, PR gerekli, CI yeşil olmalı.
 - **Tek görev = tek PR**. Bir PR'da birden fazla feature karıştırma. Tek concern, tek değişiklik.
 - **Commit mesajında ticket ID** (örn `feat(HAD-22): add rating UI`).
+- **PR'ı kendin merge et**: Görevini tamamlayıp PR açtıktan sonra:
+  1. CI'ın geçmesini bekle: `gh pr checks <PR_NUMBER> --watch`
+  2. CI yeşil olunca: `gh pr merge <PR_NUMBER> --squash --delete-branch`
+  3. Lokal main'i güncelle: `git checkout main && git pull`
+  4. Telefonu güncelle (Bölüm 6)
+  - **CI fail olursa düzelt** — kırmızı PR'ı asla bırakma. Hata mesajını oku, fix push et, tekrar bekle.
+  - Branch protection veya merge engeli olursa kullanıcıya bildir, atla.
 
 ## 2. Frontend ↔ Backend Senkronu
 
@@ -37,7 +44,28 @@ Bu dosya, repo üzerinde çalışan AI agent'larının (Paperclip, Claude, vb.) 
 
 ## 6. Build & Telefon Güncellemesi
 
-- **Test cihazına yükle**: Görev tamamlandığında `flutter devices` ile bağlı cihazı kontrol et, varsa `flutter run -d <DEVICE_ID>` ile telefondaki uygulamayı güncelle. Asıl test cihaz ID: `RFCWA0ZQX1K` (Samsung SM-S911B).
+### Test cihazı bilgileri
+- **Cihaz**: Samsung Galaxy S23 (model: SM-S911B)
+- **Device ID**: `RFCWA0ZQX1K`
+- **Android sürüm**: 16 (API 36), arm64
+
+### Deploy adımları
+1. `flutter devices` çalıştır, çıktıda `RFCWA0ZQX1K` görünüyorsa devam.
+2. Görünmüyorsa:
+   - **ADB sunucusunu başlat**: `adb start-server` (ADB path: `C:\Users\onur_\AppData\Local\Android\Sdk\platform-tools\adb.exe`)
+   - **Authorization prompt**: Telefon ekranında "USB hata ayıklamasına izin ver?" dialog'u olabilir, kullanıcıya bildir.
+   - **PATH kontrolü**: Senin cwd'nde `flutter` ve `adb` PATH'te olmayabilir. Tam path kullan ya da kullanıcının PATH'inden inherit et.
+3. Yükle: 
+   ```
+   flutter run -d RFCWA0ZQX1K --release
+   ```
+   Veya hot reload için debug:
+   ```
+   flutter run -d RFCWA0ZQX1K
+   ```
+4. Build başarılı olduktan sonra "Telefon güncellendi, X özelliğini test et" şeklinde kullanıcıya bildir.
+
+### Test
 - "Test cihazda X yaptım, beklenen sonuç Y oldu" şeklinde rapor et.
 - CI fail eden bir PR merge edilmesin.
 - Pre-commit hook'ta `flutter analyze` çalışsın.
