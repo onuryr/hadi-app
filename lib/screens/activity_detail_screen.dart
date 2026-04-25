@@ -10,6 +10,7 @@ import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../services/notification_service.dart';
 import '../services/rating_service.dart';
+import '../services/participant_service.dart';
 import '../services/report_block_service.dart';
 import '../utils/category_defaults.dart';
 import '../widgets/star_rating.dart';
@@ -37,6 +38,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   bool _cancelling = false;
   bool _isFavorite = false;
   Map<String, int> _myRatings = {};
+  String _processingUserId = '';
 
   bool get _isPast {
     final sa = _fullActivity['scheduled_at'];
@@ -284,7 +286,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   Future<void> _joinActivity() async {
     final max = _fullActivity['max_participants'] as int?;
-    if (max != null && _participants.length >= max) {
+    if (max != null && _approvedParticipants.length >= max) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Aktivite dolu, katılamazsın')),
       );
@@ -297,7 +299,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       await _supabase.from('activity_participants').insert({
         'activity_id': widget.activity['id'],
         'user_id': userId,
-        'status': 'approved',
+        'status': 'pending',
       });
       final joinUserData = await _supabase
           .from('users')
@@ -310,7 +312,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aktiviteye katıldınız!')),
+          const SnackBar(content: Text('Katılım isteğiniz gönderildi')),
         );
       }
     } catch (e) {
@@ -355,6 +357,56 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       }
     } finally {
       setState(() => _leaving = false);
+    }
+  }
+
+  Future<void> _approveParticipant(String userId) async {
+    setState(() => _processingUserId = userId);
+    try {
+      await ParticipantService.updateStatus(
+        activityId: widget.activity['id'].toString(),
+        userId: userId,
+        status: 'approved',
+      );
+      await _loadParticipants();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Katılım onaylandı')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _processingUserId = '');
+    }
+  }
+
+  Future<void> _rejectParticipant(String userId) async {
+    setState(() => _processingUserId = userId);
+    try {
+      await ParticipantService.updateStatus(
+        activityId: widget.activity['id'].toString(),
+        userId: userId,
+        status: 'rejected',
+      );
+      await _loadParticipants();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Katılım reddedildi')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _processingUserId = '');
     }
   }
 
@@ -411,6 +463,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final userId = _supabase.auth.currentUser?.id;
     return _participants.any((p) => p['user_id'] == userId);
   }
+
+  List<Map<String, dynamic>> get _approvedParticipants =>
+      _participants.where((p) => p['status'] == 'approved').toList();
+
+  List<Map<String, dynamic>> get _pendingParticipants =>
+      _participants.where((p) => p['status'] == 'pending').toList();
 
   List<Widget> _buildRatingSection() {
     final currentUserId = _supabase.auth.currentUser?.id;
@@ -621,9 +679,88 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.people),
                         title: Text(
-                          '${_participants.length} / ${activity['max_participants'] ?? '?'} katılımcı',
+                          '${_approvedParticipants.length} / ${activity['max_participants'] ?? '?'} katılımcı',
                         ),
                       ),
+                      if (_isCreator && _pendingParticipants.isNotEmpty) ...[
+                        const Divider(),
+                        const Text(
+                          'Bekleyen İstekler',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        ..._pendingParticipants.map((p) {
+                          final pUserId = p['user_id']?.toString() ?? '';
+                          final pName =
+                              p['users']?['display_name'] ?? 'Bilinmiyor';
+                          final pAvatarUrl =
+                              p['users']?['avatar_url'] as String?;
+                          final isThisProcessing =
+                              _processingUserId == pUserId;
+                          final anyProcessing = _processingUserId.isNotEmpty;
+                          final max =
+                              _fullActivity['max_participants'] as int?;
+                          final isFull = max != null &&
+                              _approvedParticipants.length >= max;
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              backgroundImage: pAvatarUrl != null
+                                  ? CachedNetworkImageProvider(pAvatarUrl)
+                                  : null,
+                              child: pAvatarUrl == null
+                                  ? Text(pName.isNotEmpty
+                                      ? pName[0].toUpperCase()
+                                      : '?')
+                                  : null,
+                            ),
+                            title: Text(pName),
+                            onTap: pUserId.isEmpty
+                                ? null
+                                : () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: (_) => ProfileScreen(
+                                              userId: pUserId)),
+                                    ),
+                            trailing: isThisProcessing
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Tooltip(
+                                        message:
+                                            isFull ? 'Kontenjan dolu' : '',
+                                        child: TextButton(
+                                          style: TextButton.styleFrom(
+                                              foregroundColor: Colors.green),
+                                          onPressed: (isFull ||
+                                                  anyProcessing)
+                                              ? null
+                                              : () => _approveParticipant(
+                                                  pUserId),
+                                          child: const Text('Onayla'),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        style: TextButton.styleFrom(
+                                            foregroundColor: Colors.red),
+                                        onPressed: anyProcessing
+                                            ? null
+                                            : () =>
+                                                _rejectParticipant(pUserId),
+                                        child: const Text('Reddet'),
+                                      ),
+                                    ],
+                                  ),
+                          );
+                        }),
+                      ],
                       const Divider(),
                       const Text(
                         'Katılımcılar',
@@ -631,7 +768,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      ..._participants.map((p) {
+                      ..._approvedParticipants.map((p) {
                         final userId = p['user_id']?.toString();
                         final name =
                             p['users']?['display_name'] ?? 'Bilinmiyor';
