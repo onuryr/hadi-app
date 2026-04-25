@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'services/deep_link_service.dart';
 import 'services/notification_service.dart';
 
 Future<void> main() async {
@@ -17,20 +19,31 @@ Future<void> main() async {
   );
 
   await NotificationService.init();
+  await DeepLinkService.init();
   // Mevcut oturum varsa token'ı senkron et
   if (Supabase.instance.client.auth.currentUser != null) {
     await NotificationService.syncTokenForCurrentUser();
   }
 
-  runApp(const MyApp());
+  final seenOnboarding = await OnboardingScreen.hasSeenOnboarding();
+  runApp(MyApp(seenOnboarding: seenOnboarding));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool seenOnboarding;
+
+  const MyApp({super.key, required this.seenOnboarding});
 
   @override
   Widget build(BuildContext context) {
     final session = Supabase.instance.client.auth.currentSession;
+
+    Widget home;
+    if (session != null) {
+      home = seenOnboarding ? const HomeScreen() : const OnboardingScreen();
+    } else {
+      home = const LoginScreen();
+    }
 
     return MaterialApp(
       title: 'Hadi',
@@ -39,7 +52,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: session != null ? const HomeScreen() : const LoginScreen(),
+      home: home,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/notification_service.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
+import 'onboarding_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,9 +36,12 @@ class _LoginScreenState extends State<LoginScreen> {
       'display_name': email.split('@').first,
     }, onConflict: 'id');
     await NotificationService.syncTokenForCurrentUser();
+    final seenOnboarding = await OnboardingScreen.hasSeenOnboarding();
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      MaterialPageRoute(
+        builder: (_) => seenOnboarding ? const HomeScreen() : const OnboardingScreen(),
+      ),
     );
   }
 
