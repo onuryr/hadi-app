@@ -117,7 +117,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('İptal Et', style: TextStyle(color: Colors.red)),
+            child: const Text('İptal Et', style: TextStyle(color: Color(0xFFB3261E))),
           ),
         ],
       ),
@@ -162,7 +162,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               child: const Text('İptal')),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Sil', style: TextStyle(color: Colors.red)),
+            child: const Text('Sil', style: TextStyle(color: Color(0xFFB3261E))),
           ),
         ],
       ),
@@ -567,7 +567,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   ),
                 const PopupMenuItem(
                   value: 'delete',
-                  child: Text('Sil', style: TextStyle(color: Colors.red)),
+                  child: Text('Sil', style: TextStyle(color: Color(0xFFB3261E))),
                 ),
               ],
             ),

@@ -385,7 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (_) => const ProfileScreen()),
             ),
           ),
-          IconButton(icon: const Icon(Icons.logout), onPressed: _signOut),
+          IconButton(icon: const Icon(Icons.logout), tooltip: 'Çıkış yap', onPressed: _signOut),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -585,23 +585,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 6),
-                                            GestureDetector(
-                                              onTap: () => _toggleFavorite(activity['id'].toString()),
-                                              child: Container(
-                                                padding: const EdgeInsets.all(6),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black.withValues(alpha: 0.6),
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: Icon(
-                                                  _favoriteIds.contains(activity['id'].toString())
-                                                      ? Icons.favorite
-                                                      : Icons.favorite_border,
-                                                  color: _favoriteIds.contains(activity['id'].toString())
-                                                      ? Colors.red
-                                                      : Colors.white,
-                                                  size: 18,
-                                                ),
+                                            IconButton(
+                                              iconSize: 18,
+                                              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                                              style: IconButton.styleFrom(
+                                                backgroundColor: Colors.black.withValues(alpha: 0.6),
+                                                shape: const CircleBorder(),
+                                                padding: EdgeInsets.zero,
+                                              ),
+                                              onPressed: () => _toggleFavorite(activity['id'].toString()),
+                                              icon: Icon(
+                                                _favoriteIds.contains(activity['id'].toString())
+                                                    ? Icons.favorite
+                                                    : Icons.favorite_border,
+                                                color: _favoriteIds.contains(activity['id'].toString())
+                                                    ? Colors.red
+                                                    : Colors.white,
+                                                size: 18,
                                               ),
                                             ),
                                           ],
@@ -638,7 +638,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         Text('📍 ${activity['location_name'] ?? ''}', style: const TextStyle(fontSize: 13)),
                                         Text(
                                           '🕐 ${_formatDate(activity['scheduled_at'])}  👥 ${activity['participant_count'] ?? 0}/${activity['max_participants'] ?? '?'}',
-                                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                          style: const TextStyle(fontSize: 12, color: Color(0xFF616161)),
                                         ),
                                       ],
                                     ),
