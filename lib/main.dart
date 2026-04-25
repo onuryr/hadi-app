@@ -6,6 +6,7 @@ import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/deep_link_service.dart';
 import 'services/notification_service.dart';
+import 'services/theme_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,14 +26,35 @@ Future<void> main() async {
     await NotificationService.syncTokenForCurrentUser();
   }
 
+  themeNotifier = await ThemeNotifier.load();
+
   final seenOnboarding = await OnboardingScreen.hasSeenOnboarding();
   runApp(MyApp(seenOnboarding: seenOnboarding));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final bool seenOnboarding;
 
   const MyApp({super.key, required this.seenOnboarding});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    themeNotifier.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    themeNotifier.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +62,7 @@ class MyApp extends StatelessWidget {
 
     Widget home;
     if (session != null) {
-      home = seenOnboarding ? const HomeScreen() : const OnboardingScreen();
+      home = widget.seenOnboarding ? const HomeScreen() : const OnboardingScreen();
     } else {
       home = const LoginScreen();
     }
@@ -52,6 +74,14 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      themeMode: themeNotifier.mode,
       home: home,
     );
   }

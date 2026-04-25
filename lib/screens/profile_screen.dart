@@ -9,6 +9,7 @@ import '../services/rating_service.dart';
 import '../services/report_block_service.dart';
 import 'activity_detail_screen.dart';
 import 'blocked_users_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
@@ -312,7 +313,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     targetType: 'user',
                     targetId: userId,
                   );
-                  if (ok && mounted) {
+                  if (ok) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Raporunuz iletildi')),
                     );
@@ -323,7 +325,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     userId: userId,
                     displayName: name,
                   );
-                  if (blocked && mounted) Navigator.of(context).pop();
+                  if (blocked) {
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                  }
                 }
               },
               itemBuilder: (_) => const [
