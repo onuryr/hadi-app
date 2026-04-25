@@ -2,11 +2,14 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/deep_link_service.dart';
 import '../services/rating_service.dart';
 import '../services/report_block_service.dart';
 import 'activity_detail_screen.dart';
 import 'blocked_users_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
@@ -178,6 +181,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
+  Future<void> _shareActivity(Map<String, dynamic> activity) async {
+    final activityId = activity['id'].toString();
+    final title = activity['title'] ?? '';
+    final locationName = activity['location_name'] ?? '';
+    final scheduledAt = activity['scheduled_at'];
+    String date = '';
+    if (scheduledAt != null) {
+      final dt = DateTime.parse(scheduledAt).toLocal();
+      date = '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+    final link = DeepLinkService.activityUrl(activityId);
+    final text = '🎉 $title\n📅 $date\n📍 $locationName\n\nHadi, aktiviteye katıl:\n$link';
+    await Share.share(text);
+  }
+
   String _formatDate(String? scheduledAt) {
     if (scheduledAt == null) return '';
     final dt = DateTime.parse(scheduledAt).toLocal();
@@ -221,26 +239,27 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ? Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: Theme.of(context).colorScheme.errorContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text('İptal Edildi',
-                      style: TextStyle(fontSize: 11, color: Colors.red.shade700)),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onErrorContainer)),
                 )
               : past
                   ? Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('Tamamlandı',
-                          style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      child: Text('Tamamlandı',
+                          style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     )
                   : const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: a)),
           ),
+          onLongPress: () => _shareActivity(a),
         );
       },
     );
@@ -272,9 +291,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
                   );
+                } else if (value == 'settings') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
                 }
               },
               itemBuilder: (_) => const [
+                PopupMenuItem(value: 'settings', child: Text('Ayarlar')),
                 PopupMenuItem(value: 'blocked', child: Text('Engellediklerim')),
               ],
             ),
@@ -289,7 +313,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     targetType: 'user',
                     targetId: userId,
                   );
-                  if (ok && mounted) {
+                  if (ok) {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Raporunuz iletildi')),
                     );
@@ -300,7 +325,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     userId: userId,
                     displayName: name,
                   );
-                  if (blocked && mounted) Navigator.of(context).pop();
+                  if (blocked) {
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                  }
                 }
               },
               itemBuilder: (_) => const [
@@ -403,7 +431,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               return Text(
                                 bio,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.black87),
                               );
                             }),
                     ],

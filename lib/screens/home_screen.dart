@@ -11,7 +11,9 @@ import 'create_activity_screen.dart';
 import 'activity_detail_screen.dart';
 import 'profile_screen.dart';
 import 'inbox_screen.dart';
+import 'package:share_plus/share_plus.dart';
 import '../services/chat_service.dart';
+import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/category_defaults.dart';
 
@@ -220,6 +222,21 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       setState(() => _loadingMore = false);
     }
+  }
+
+  Future<void> _shareActivity(Map<String, dynamic> activity) async {
+    final activityId = activity['id'].toString();
+    final title = activity['title'] ?? '';
+    final locationName = activity['location_name'] ?? '';
+    final scheduledAt = activity['scheduled_at'];
+    String date = '';
+    if (scheduledAt != null) {
+      final dt = DateTime.parse(scheduledAt).toLocal();
+      date = '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    }
+    final link = DeepLinkService.activityUrl(activityId);
+    final text = '🎉 $title\n📅 $date\n📍 $locationName\n\nHadi, aktiviteye katıl:\n$link';
+    await Share.share(text);
   }
 
   Future<void> _signOut() async {
@@ -532,6 +549,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 );
                                 if (deleted == true) _loadActivities();
                               },
+                              onLongPress: () => _shareActivity(activity),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
