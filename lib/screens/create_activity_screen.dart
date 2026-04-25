@@ -270,11 +270,11 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     ? const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_photo_alternate, size: 48, color: Colors.grey),
+                          Icon(Icons.add_photo_alternate, size: 48, color: Color(0xFF616161)),
                           SizedBox(height: 8),
-                          Text('Resim ekle (opsiyonel)', style: TextStyle(color: Colors.grey)),
+                          Text('Resim ekle (opsiyonel)', style: TextStyle(color: Color(0xFF616161))),
                           Text('Seçmezsen kategori resmi kullanılır',
-                              style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              style: TextStyle(color: Color(0xFF616161), fontSize: 12)),
                         ],
                       )
                     : Align(

@@ -22,12 +22,18 @@ class StarRating extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(max, (i) {
         final filled = i < value;
-        return GestureDetector(
-          onTap: onChanged == null ? null : () => onChanged!(i + 1),
-          child: Icon(
-            filled ? Icons.star : Icons.star_border,
-            color: filled ? color : Colors.grey,
-            size: size,
+        return SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(
+            child: GestureDetector(
+              onTap: onChanged == null ? null : () => onChanged!(i + 1),
+              child: Icon(
+                filled ? Icons.star : Icons.star_border,
+                color: filled ? color : Colors.grey,
+                size: size,
+              ),
+            ),
           ),
         );
       }),

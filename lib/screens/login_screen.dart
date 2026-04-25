@@ -149,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 'Etkinlik bul, insanlarla tanış',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: Color(0xFF616161)),
               ),
               const SizedBox(height: 48),
               TextField(

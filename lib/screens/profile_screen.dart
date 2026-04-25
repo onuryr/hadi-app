@@ -282,6 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   )
                 : IconButton(
                     icon: const Icon(Icons.edit),
+                    tooltip: 'Düzenle',
                     onPressed: () => setState(() => _editMode = true),
                   ),
           if (_isSelf && !_loading)
