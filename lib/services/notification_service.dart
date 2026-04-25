@@ -15,9 +15,14 @@ class NotificationService {
 
   static Future<void> _post(String path, Map<String, dynamic> body) async {
     try {
+      final token = Supabase.instance.client.auth.currentSession?.accessToken;
+      if (token == null) return;
       await http.post(
         Uri.parse('$_apiBase$path'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode(body),
       ).timeout(const Duration(seconds: 5));
     } catch (_) {}
