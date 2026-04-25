@@ -16,7 +16,6 @@ import '../services/chat_service.dart';
 import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/category_defaults.dart';
-import '../l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -354,7 +353,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hadi'),
@@ -510,17 +508,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const Icon(Icons.error_outline, size: 48, color: Colors.grey),
                       const SizedBox(height: 8),
-                      Text(l10n.activitiesLoadError, style: Theme.of(context).textTheme.titleMedium),
+                      Text('Aktiviteler yüklenemedi', style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadActivities,
-                        child: Text(l10n.retryButton),
+                        child: const Text('Tekrar Dene'),
                       ),
                     ],
                   ),
                 )
               : _activities.isEmpty
-                  ? Center(child: Text(l10n.noActivitiesNearby))
+                  ? const Center(child: Text('Yakında aktif aktivite bulunamadı'))
                   : RefreshIndicator(
                       onRefresh: _loadActivities,
                       child: ListView.builder(
