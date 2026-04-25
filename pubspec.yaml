@@ -45,9 +45,15 @@ dependencies:
   firebase_core: ^4.7.0
   firebase_messaging: ^16.2.0
   flutter_local_notifications: ^21.0.0
-  share_plus: ^12.0.2
+  share_plus: ^13.0.0
   app_links: ^7.0.0
   shared_preferences: ^2.3.3
+  shimmer: ^3.0.0
+
+# share_plus 13.x requires win32 ^6.x but geolocator_linux (via package_info_plus)
+# requires win32 <6.x. win32 is Windows-only so forcing 6.x is safe for our Android target.
+dependency_overrides:
+  win32: ^6.0.1
 
 dev_dependencies:
   flutter_test:
