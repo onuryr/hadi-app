@@ -16,6 +16,7 @@ import '../services/chat_service.dart';
 import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/category_defaults.dart';
+import '../l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -236,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     final link = DeepLinkService.activityUrl(activityId);
     final text = '🎉 $title\n📅 $date\n📍 $locationName\n\nHadi, aktiviteye katıl:\n$link';
-    await Share.share(text);
+    await SharePlus.instance.share(ShareParams(text: text));
   }
 
   Future<void> _signOut() async {
@@ -353,6 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hadi'),
@@ -508,17 +510,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const Icon(Icons.error_outline, size: 48, color: Colors.grey),
                       const SizedBox(height: 8),
-                      Text('Aktiviteler yüklenemedi', style: Theme.of(context).textTheme.titleMedium),
+                      Text(l10n.activitiesLoadError, style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadActivities,
-                        child: const Text('Tekrar Dene'),
+                        child: Text(l10n.retryButton),
                       ),
                     ],
                   ),
                 )
               : _activities.isEmpty
-                  ? const Center(child: Text('Yakında aktif aktivite bulunamadı'))
+                  ? Center(child: Text(l10n.noActivitiesNearby))
                   : RefreshIndicator(
                       onRefresh: _loadActivities,
                       child: ListView.builder(

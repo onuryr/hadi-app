@@ -45,7 +45,7 @@ class _InboxScreenState extends State<InboxScreen> {
     }
     final link = DeepLinkService.activityUrl(activityId);
     final text = '🎉 $title\n📅 $date\n📍 $locationName\n\nHadi, aktiviteye katıl:\n$link';
-    await Share.share(text);
+    await SharePlus.instance.share(ShareParams(text: text));
   }
 
   String _formatTime(String createdAt) {
