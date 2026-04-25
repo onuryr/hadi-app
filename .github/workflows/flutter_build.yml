@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-apk:
-    name: Build Release APK
+    name: Build Debug APK (ARM64)
     runs-on: ubuntu-latest
 
     steps:
@@ -42,12 +42,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Release APK
-        run: flutter build apk --release
+      - name: Build Debug APK (ARM64 only)
+        run: flutter build apk --debug --target-platform=android-arm64 --split-per-abi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: debug-apk-arm64
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk
           retention-days: 30
