@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/rating_service.dart';
+import '../services/report_block_service.dart';
 import 'activity_detail_screen.dart';
+import 'blocked_users_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
@@ -70,14 +72,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             .order('created_at', ascending: false),
         _supabase
             .from('activity_participants')
-            .select('activities(id, title, location_name, scheduled_at, max_participants, location, description, creator_id)')
+            .select('activities(id, title, location_name, scheduled_at, max_participants, location, description, creator_id, status)')
             .eq('user_id', userId)
             .eq('status', 'approved'),
       ];
       if (_isSelf) {
         baseFutures.add(_supabase
             .from('activity_favorites')
-            .select('activities(id, title, location_name, scheduled_at, max_participants, location, description)')
+            .select('activities(id, title, location_name, scheduled_at, max_participants, location, description, status)')
             .eq('user_id', userId)
             .order('created_at', ascending: false));
       }
@@ -215,16 +217,27 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             '${a['location_name'] ?? ''}  •  ${_formatDate(a['scheduled_at'])}',
             style: TextStyle(color: past ? Colors.grey : null),
           ),
-          trailing: past
+          trailing: a['status'] == 'inactive'
               ? Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('Tamamlandı', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  child: Text('İptal Edildi',
+                      style: TextStyle(fontSize: 11, color: Colors.red.shade700)),
                 )
-              : const Icon(Icons.chevron_right),
+              : past
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('Tamamlandı',
+                          style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    )
+                  : const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: a)),
           ),
@@ -252,6 +265,49 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     icon: const Icon(Icons.edit),
                     onPressed: () => setState(() => _editMode = true),
                   ),
+          if (_isSelf && !_loading)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'blocked') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
+                  );
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'blocked', child: Text('Engellediklerim')),
+              ],
+            ),
+          if (!_isSelf && !_loading)
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                final userId = _viewedUserId;
+                final name = _user?['display_name']?.toString() ?? 'Kullanıcı';
+                if (value == 'report') {
+                  final ok = await ReportBlockService.showReportDialog(
+                    context,
+                    targetType: 'user',
+                    targetId: userId,
+                  );
+                  if (ok && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Raporunuz iletildi')),
+                    );
+                  }
+                } else if (value == 'block') {
+                  final blocked = await ReportBlockService.showBlockConfirmDialog(
+                    context,
+                    userId: userId,
+                    displayName: name,
+                  );
+                  if (blocked && mounted) Navigator.of(context).pop();
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'report', child: Text('Raporla')),
+                PopupMenuItem(value: 'block', child: Text('Engelle')),
+              ],
+            ),
         ],
       ),
       body: _loading

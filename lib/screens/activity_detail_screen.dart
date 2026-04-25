@@ -34,6 +34,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   bool _joining = false;
   bool _leaving = false;
   bool _deleting = false;
+  bool _cancelling = false;
   bool _isFavorite = false;
   Map<String, int> _myRatings = {};
 
@@ -42,6 +43,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     if (sa == null) return false;
     return DateTime.parse(sa).toLocal().isBefore(DateTime.now());
   }
+
+  bool get _isCancelled => _fullActivity['status'] == 'inactive';
 
   bool get _wasMember {
     final userId = _supabase.auth.currentUser?.id;
@@ -97,14 +100,63 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     if (updated == true) await _loadData();
   }
 
+  Future<void> _cancelActivity() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Aktiviteyi iptal et?'),
+        content: const Text(
+            'Katılımcılar bilgilendirilecek ve aktivite iptal edildi olarak işaretlenecek.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('İptal Et', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _cancelling = true);
+    try {
+      final activityId = widget.activity['id'];
+      final title = _fullActivity['title'] ?? '';
+      await NotificationService.notifyActivityDeleted(
+          activityId.toString(), title);
+      await _supabase
+          .from('activities')
+          .update({'status': 'inactive'}).eq('id', activityId);
+      if (mounted) {
+        Navigator.of(context).pop(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Aktivite iptal edildi')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _cancelling = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('İptal hatası: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _deleteActivity() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Aktiviteyi sil?'),
-        content: const Text('Bu aktivite ve tüm katılımcıları kalıcı olarak silinecek. Emin misin?'),
+        content: const Text(
+            'Bu aktivite ve tüm katılımcıları kalıcı olarak silinecek. Emin misin?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('İptal')),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('İptal')),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Sil', style: TextStyle(color: Colors.red)),
@@ -118,8 +170,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     try {
       final activityId = widget.activity['id'];
       final title = _fullActivity['title'] ?? '';
-      await NotificationService.notifyActivityDeleted(activityId.toString(), title);
-      await _supabase.from('activity_participants').delete().eq('activity_id', activityId);
+      await NotificationService.notifyActivityDeleted(
+          activityId.toString(), title);
+      await _supabase
+          .from('activity_participants')
+          .delete()
+          .eq('activity_id', activityId);
       await _supabase.from('activities').delete().eq('id', activityId);
       if (mounted) {
         Navigator.of(context).pop(true);
@@ -154,7 +210,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _loadMyRatings() async {
-    final ratings = await RatingService.getMyRatingsForActivity(widget.activity['id'].toString());
+    final ratings = await RatingService.getMyRatingsForActivity(
+        widget.activity['id'].toString());
     if (mounted) setState(() => _myRatings = ratings);
   }
 
@@ -184,12 +241,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _loadFavoriteStatus() async {
-    final fav = await FavoritesService.isFavorite(widget.activity['id'].toString());
+    final fav =
+        await FavoritesService.isFavorite(widget.activity['id'].toString());
     if (mounted) setState(() => _isFavorite = fav);
   }
 
   Future<void> _toggleFavorite() async {
-    final newState = await FavoritesService.toggle(widget.activity['id'].toString());
+    final newState =
+        await FavoritesService.toggle(widget.activity['id'].toString());
     if (mounted) setState(() => _isFavorite = newState);
   }
 
@@ -197,7 +256,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     try {
       final data = await _supabase
           .from('activities')
-          .select('id, title, description, location_name, scheduled_at, max_participants, location, creator_id, image_url, category_id')
+          .select(
+              'id, title, description, location_name, scheduled_at, max_participants, location, creator_id, image_url, category_id, status')
           .eq('id', widget.activity['id'])
           .single();
       if (mounted) setState(() => _fullActivity = {..._fullActivity, ...data});
@@ -239,9 +299,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         'user_id': userId,
         'status': 'approved',
       });
-      final joinUserData = await _supabase.from('users').select('display_name').eq('id', userId).maybeSingle();
+      final joinUserData = await _supabase
+          .from('users')
+          .select('display_name')
+          .eq('id', userId)
+          .maybeSingle();
       final joinUserName = joinUserData?['display_name'] as String? ?? '';
-      NotificationService.notifyActivityJoined(widget.activity['id'].toString(), joinUserName);
+      NotificationService.notifyActivityJoined(
+          widget.activity['id'].toString(), joinUserName);
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -263,14 +328,19 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     setState(() => _leaving = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
-      final leaveUserData = await _supabase.from('users').select('display_name').eq('id', userId).maybeSingle();
+      final leaveUserData = await _supabase
+          .from('users')
+          .select('display_name')
+          .eq('id', userId)
+          .maybeSingle();
       final leaveUserName = leaveUserData?['display_name'] as String? ?? '';
       await _supabase
           .from('activity_participants')
           .delete()
           .eq('activity_id', widget.activity['id'])
           .eq('user_id', userId);
-      NotificationService.notifyActivityLeft(widget.activity['id'].toString(), leaveUserName);
+      NotificationService.notifyActivityLeft(
+          widget.activity['id'].toString(), leaveUserName);
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -302,7 +372,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           return LatLng(coords[1].toDouble(), coords[0].toDouble());
         }
         if (location.startsWith('POINT')) {
-          final clean = location.replaceAll('POINT(', '').replaceAll(')', '');
+          final clean =
+              location.replaceAll('POINT(', '').replaceAll(')', '');
           final parts = clean.trim().split(' ');
           return LatLng(double.parse(parts[1]), double.parse(parts[0]));
         }
@@ -315,7 +386,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   LatLng? _parseEwkbHex(String hex) {
     final bytes = Uint8List.fromList(
-      List.generate(hex.length ~/ 2, (i) => int.parse(hex.substring(i * 2, i * 2 + 2), radix: 16)),
+      List.generate(hex.length ~/ 2,
+          (i) => int.parse(hex.substring(i * 2, i * 2 + 2), radix: 16)),
     );
     final bd = ByteData.sublistView(bytes);
     final le = bytes[0] == 1;
@@ -331,7 +403,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   bool get _isApprovedParticipant {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return false;
-    return _participants.any((p) => p['user_id'] == userId && p['status'] == 'approved');
+    return _participants
+        .any((p) => p['user_id'] == userId && p['status'] == 'approved');
   }
 
   bool get _isParticipant {
@@ -342,7 +415,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   List<Widget> _buildRatingSection() {
     final currentUserId = _supabase.auth.currentUser?.id;
     final others = _participants
-        .where((p) => p['status'] == 'approved' && p['user_id'] != currentUserId)
+        .where(
+            (p) => p['status'] == 'approved' && p['user_id'] != currentUserId)
         .toList();
     if (others.isEmpty) return [];
     return [
@@ -361,8 +435,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         return ListTile(
           contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
-            backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
-            child: avatarUrl == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?') : null,
+            backgroundImage:
+                avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
+            child: avatarUrl == null
+                ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?')
+                : null,
           ),
           title: Text(name),
           subtitle: Padding(
@@ -412,28 +489,34 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             tooltip: 'Paylaş',
             onPressed: _shareActivity,
           ),
-          if (_isCreator)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Düzenle',
-              onPressed: _openEdit,
-            ),
-          if (_isCreator)
-            IconButton(
-              icon: _deleting
-                  ? const SizedBox(
-                      width: 20, height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.delete_outline),
-              tooltip: 'Aktiviteyi sil',
-              onPressed: _deleting ? null : _deleteActivity,
+          if (_isCreator && !_loading)
+            PopupMenuButton<String>(
+              enabled: !_deleting && !_cancelling,
+              onSelected: (value) {
+                if (value == 'edit') _openEdit();
+                if (value == 'cancel') _cancelActivity();
+                if (value == 'delete') _deleteActivity();
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                    value: 'edit', child: Text('Düzenle')),
+                if (!_isPast && !_isCancelled)
+                  const PopupMenuItem(
+                    value: 'cancel',
+                    child: Text('Aktiviteyi İptal Et'),
+                  ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Text('Sil', style: TextStyle(color: Colors.red)),
+                ),
+              ],
             ),
           if (!_isCreator && !_loading)
             PopupMenuButton<String>(
               onSelected: (value) async {
                 final activityId = widget.activity['id']?.toString() ?? '';
-                final creatorId = _fullActivity['creator_id']?.toString() ?? '';
+                final creatorId =
+                    _fullActivity['creator_id']?.toString() ?? '';
                 if (value == 'report') {
                   final ok = await ReportBlockService.showReportDialog(
                     context,
@@ -448,12 +531,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                 } else if (value == 'block') {
                   final creatorName = _participants
                           .firstWhere(
-                            (p) => p['user_id']?.toString() == creatorId,
+                            (p) =>
+                                p['user_id']?.toString() == creatorId,
                             orElse: () => <String, dynamic>{},
                           )['users']?['display_name']
                           ?.toString() ??
                       'Kullanıcı';
-                  final blocked = await ReportBlockService.showBlockConfirmDialog(
+                  final blocked =
+                      await ReportBlockService.showBlockConfirmDialog(
                     context,
                     userId: creatorId,
                     displayName: creatorName,
@@ -482,106 +567,149 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                     ),
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(color: Colors.grey.shade200),
-                    errorWidget: (_, __, ___) => Container(color: Colors.grey.shade200),
+                    placeholder: (_, __) =>
+                        Container(color: Colors.grey.shade200),
+                    errorWidget: (_, __, ___) =>
+                        Container(color: Colors.grey.shade200),
                   ),
                 ),
+                if (_isCancelled)
+                  Container(
+                    width: double.infinity,
+                    color: Colors.red.shade50,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.cancel_outlined,
+                            color: Colors.red.shade700),
+                        const SizedBox(width: 8),
+                        Text(
+                          'İptal Edildi',
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                if (activity['description'] != null &&
-                    activity['description'].toString().isNotEmpty) ...[
-                  Text(
-                    activity['description'],
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (scheduledAt != null)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.calendar_today),
-                    title: Text(
-                      '${scheduledAt.day}/${scheduledAt.month}/${scheduledAt.year} '
-                      '${scheduledAt.hour.toString().padLeft(2, '0')}:${scheduledAt.minute.toString().padLeft(2, '0')}',
-                    ),
-                  ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.people),
-                  title: Text(
-                    '${_participants.length} / ${activity['max_participants'] ?? '?'} katılımcı',
-                  ),
-                ),
-                const Divider(),
-                const Text(
-                  'Katılımcılar',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                ..._participants.map((p) {
-                  final userId = p['user_id']?.toString();
-                  final name = p['users']?['display_name'] ?? 'Bilinmiyor';
-                  final avatarUrl = p['users']?['avatar_url'] as String?;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
-                      child: avatarUrl == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?') : null,
-                    ),
-                    title: Text(name),
-                    onTap: userId == null
-                        ? null
-                        : () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId)),
-                            ),
-                  );
-                }),
-                if (_isPast && _isApprovedParticipant) ..._buildRatingSection(),
-                const Divider(height: 32),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.location_on),
-                  title: Text(activity['location_name'] ?? ''),
-                ),
-                Builder(builder: (context) {
-                  final latLng = _parseLocation(activity['location']);
-                  if (latLng == null) return const SizedBox.shrink();
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: SizedBox(
-                          height: 220,
-                          child: GoogleMap(
-                            initialCameraPosition: CameraPosition(target: latLng, zoom: 15),
-                            markers: {
-                              Marker(markerId: const MarkerId('activity'), position: latLng),
-                            },
-                            zoomControlsEnabled: true,
-                            myLocationButtonEnabled: false,
+                      if (activity['description'] != null &&
+                          activity['description'].toString().isNotEmpty) ...[
+                        Text(
+                          activity['description'],
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (scheduledAt != null)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.calendar_today),
+                          title: Text(
+                            '${scheduledAt.day}/${scheduledAt.month}/${scheduledAt.year} '
+                            '${scheduledAt.hour.toString().padLeft(2, '0')}:${scheduledAt.minute.toString().padLeft(2, '0')}',
                           ),
                         ),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.people),
+                        title: Text(
+                          '${_participants.length} / ${activity['max_participants'] ?? '?'} katılımcı',
+                        ),
+                      ),
+                      const Divider(),
+                      const Text(
+                        'Katılımcılar',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final url = Uri.parse(
-                            'https://www.google.com/maps/dir/?api=1&destination=${latLng.latitude},${latLng.longitude}&travelmode=driving',
-                          );
-                          if (await canLaunchUrl(url)) launchUrl(url, mode: LaunchMode.externalApplication);
-                        },
-                        icon: const Icon(Icons.directions),
-                        label: const Text('Yol Tarifi Al'),
+                      ..._participants.map((p) {
+                        final userId = p['user_id']?.toString();
+                        final name =
+                            p['users']?['display_name'] ?? 'Bilinmiyor';
+                        final avatarUrl =
+                            p['users']?['avatar_url'] as String?;
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundImage: avatarUrl != null
+                                ? CachedNetworkImageProvider(avatarUrl)
+                                : null,
+                            child: avatarUrl == null
+                                ? Text(name.isNotEmpty
+                                    ? name[0].toUpperCase()
+                                    : '?')
+                                : null,
+                          ),
+                          title: Text(name),
+                          onTap: userId == null
+                              ? null
+                              : () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            ProfileScreen(userId: userId)),
+                                  ),
+                        );
+                      }),
+                      if (_isPast && _isApprovedParticipant)
+                        ..._buildRatingSection(),
+                      const Divider(height: 32),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.location_on),
+                        title: Text(activity['location_name'] ?? ''),
                       ),
-                      const SizedBox(height: 8),
-                    ],
-                  );
-                }),
+                      Builder(builder: (context) {
+                        final latLng = _parseLocation(activity['location']);
+                        if (latLng == null) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: SizedBox(
+                                height: 220,
+                                child: GoogleMap(
+                                  initialCameraPosition: CameraPosition(
+                                      target: latLng, zoom: 15),
+                                  markers: {
+                                    Marker(
+                                        markerId:
+                                            const MarkerId('activity'),
+                                        position: latLng),
+                                  },
+                                  zoomControlsEnabled: true,
+                                  myLocationButtonEnabled: false,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton.icon(
+                              onPressed: () async {
+                                final url = Uri.parse(
+                                  'https://www.google.com/maps/dir/?api=1&destination=${latLng.latitude},${latLng.longitude}&travelmode=driving',
+                                );
+                                if (await canLaunchUrl(url)) {
+                                  launchUrl(url,
+                                      mode: LaunchMode.externalApplication);
+                                }
+                              },
+                              icon: const Icon(Icons.directions),
+                              label: const Text('Yol Tarifi Al'),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -590,29 +718,39 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       bottomNavigationBar: _isCreator
           ? null
           : Padding(
-        padding: const EdgeInsets.all(16),
-        child: _isParticipant
-            ? ElevatedButton(
-                onPressed: _leaving ? null : _leaveActivity,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.red.shade100,
-                  foregroundColor: Colors.red.shade800,
-                ),
-                child: _leaving
-                    ? const CircularProgressIndicator()
-                    : const Text('Ayrıl'),
-              )
-            : ElevatedButton(
-                onPressed: _joining ? null : _joinActivity,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _joining
-                    ? const CircularProgressIndicator()
-                    : const Text('Katıl'),
-              ),
-      ),
+              padding: const EdgeInsets.all(16),
+              child: _isCancelled
+                  ? ElevatedButton(
+                      onPressed: null,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text('Aktivite iptal edildi'),
+                    )
+                  : _isParticipant
+                      ? ElevatedButton(
+                          onPressed: _leaving ? null : _leaveActivity,
+                          style: ElevatedButton.styleFrom(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.red.shade100,
+                            foregroundColor: Colors.red.shade800,
+                          ),
+                          child: _leaving
+                              ? const CircularProgressIndicator()
+                              : const Text('Ayrıl'),
+                        )
+                      : ElevatedButton(
+                          onPressed: _joining ? null : _joinActivity,
+                          style: ElevatedButton.styleFrom(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: _joining
+                              ? const CircularProgressIndicator()
+                              : const Text('Katıl'),
+                        ),
+            ),
     );
   }
 }
