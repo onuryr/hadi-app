@@ -35,9 +35,10 @@ Bu dosya, repo üzerinde çalışan AI agent'larının (Paperclip, Claude, vb.) 
 - **Etkilenen diğer flow'ları da test et.** Bir özelliği değiştirirken bağlı flow'ların hâlâ çalıştığını doğrula (örn. `joinActivity` değişikliği detail screen, home, inbox'ı etkiler).
 - Acceptance criteria task açıklamasında olsun, hepsini tik atarak gönder.
 
-## 6. Build Pipeline
+## 6. Build & Telefon Güncellemesi
 
-- **APK build edildikten sonra Firebase App Distribution'a yolla** (CI'da kurulu). Test cihazlarına otomatik dağıtılsın.
+- **Test cihazına yükle**: Görev tamamlandığında `flutter devices` ile bağlı cihazı kontrol et, varsa `flutter run -d <DEVICE_ID>` ile telefondaki uygulamayı güncelle. Asıl test cihaz ID: `RFCWA0ZQX1K` (Samsung SM-S911B).
+- "Test cihazda X yaptım, beklenen sonuç Y oldu" şeklinde rapor et.
 - CI fail eden bir PR merge edilmesin.
 - Pre-commit hook'ta `flutter analyze` çalışsın.
 
