@@ -10,6 +10,8 @@ import 'login_screen.dart';
 import 'create_activity_screen.dart';
 import 'activity_detail_screen.dart';
 import 'profile_screen.dart';
+import 'inbox_screen.dart';
+import '../services/chat_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/category_defaults.dart';
 
@@ -34,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showMap = false;
   String _searchQuery = '';
   int _radiusKm = 10;
+  int _unreadCount = 0;
   Set<String> _favoriteIds = {};
   Timer? _searchDebounce;
 
@@ -57,6 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
     {'id': 10, 'name': 'Sinema', 'icon': '🎬'},
   ];
 
+  RealtimeChannel? _messageChannel;
+
   @override
   void initState() {
     super.initState();
@@ -69,10 +74,31 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadMore();
       }
     });
+    _subscribeToMessages();
+  }
+
+  void _subscribeToMessages() {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
+    _messageChannel = _supabase.channel('home_messages_$userId');
+    _messageChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'messages',
+          callback: (payload) {
+            final senderId = payload.newRecord['sender_id']?.toString();
+            if (senderId != null && senderId != userId) {
+              _refreshUnread();
+            }
+          },
+        )
+        .subscribe();
   }
 
   @override
   void dispose() {
+    if (_messageChannel != null) _supabase.removeChannel(_messageChannel!);
     _scrollController.dispose();
     _searchController.dispose();
     _searchDebounce?.cancel();
@@ -96,8 +122,15 @@ class _HomeScreenState extends State<HomeScreen> {
         permission == LocationPermission.deniedForever) {
       return null;
     }
+    // Hızlı yol: son bilinen konum
+    final lastKnown = await Geolocator.getLastKnownPosition();
+    if (lastKnown != null) return lastKnown;
+    // Fallback: yeni konum iste (yavaş)
     return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.low,
+        timeLimit: Duration(seconds: 3),
+      ),
     );
   }
 
@@ -119,7 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final uri = Uri.parse('$_apiBase/api/activities/nearby').replace(queryParameters: params);
     final response = await http.get(uri).timeout(const Duration(seconds: 10));
     if (response.statusCode != 200) throw Exception('Sunucu hatası: ${response.statusCode}');
-    final List<dynamic> data = jsonDecode(response.body);
+    final decoded = jsonDecode(response.body);
+    final List<dynamic> data = decoded is Map ? (decoded['items'] as List? ?? []) : decoded as List;
     return data.map<Map<String, dynamic>>((item) => {
       'id': item['id'],
       'title': item['title'],
@@ -150,9 +184,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _hasMore = items.length == _pageSize;
         _loading = false;
       });
+      _refreshUnread();
     } catch (e) {
       setState(() { _loading = false; _error = e.toString(); });
     }
+  }
+
+  Future<void> _refreshUnread() async {
+    final count = await ChatService.unreadActivityCount();
+    if (mounted) setState(() => _unreadCount = count);
   }
 
   Future<void> _toggleFavorite(String activityId) async {
@@ -290,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatDate(String? scheduledAt) {
     if (scheduledAt == null) return '';
-    final dt = DateTime.parse(scheduledAt).toLocal();
+    final dt = DateTime.parse(scheduledAt);
     return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
@@ -305,6 +345,22 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(_showMap ? Icons.list : Icons.map),
             tooltip: _showMap ? 'Liste' : 'Harita',
             onPressed: () => setState(() => _showMap = !_showMap),
+          ),
+          Badge.count(
+            count: _unreadCount,
+            isLabelVisible: _unreadCount > 0,
+            backgroundColor: Colors.red,
+            offset: const Offset(-4, 4),
+            child: IconButton(
+              icon: const Icon(Icons.chat_bubble_outline),
+              tooltip: 'Mesajlar',
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const InboxScreen()),
+                );
+                _refreshUnread();
+              },
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.person),

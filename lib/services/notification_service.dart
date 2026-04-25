@@ -36,6 +36,20 @@ class NotificationService {
   static Future<void> notifyActivityDeleted(String activityId, String title) =>
       _post('/api/activities/$activityId/notify-deleted', {'title': title});
 
+  static Future<void> notifyNewMessage({
+    required String activityId,
+    required String senderId,
+    required String senderName,
+    required String activityTitle,
+    required String content,
+  }) =>
+      _post('/api/activities/$activityId/notify-message', {
+        'senderId': senderId,
+        'senderName': senderName,
+        'activityTitle': activityTitle,
+        'content': content,
+      });
+
   static Future<void> init() async {
     try {
       await _messaging.requestPermission(alert: true, badge: true, sound: true);
@@ -122,6 +136,12 @@ class NotificationService {
       if (user == null) return;
       final token = await _messaging.getToken();
       if (token == null) return;
+      // Bu token'ı başka kullanıcılardan temizle (aynı cihazda hesap değişikliği)
+      await Supabase.instance.client
+          .from('users')
+          .update({'fcm_token': null})
+          .eq('fcm_token', token)
+          .neq('id', user.id);
       await Supabase.instance.client
           .from('users')
           .update({'fcm_token': token})
@@ -131,6 +151,11 @@ class NotificationService {
       _messaging.onTokenRefresh.listen((newToken) async {
         final currentUser = Supabase.instance.client.auth.currentUser;
         if (currentUser == null) return;
+        await Supabase.instance.client
+            .from('users')
+            .update({'fcm_token': null})
+            .eq('fcm_token', newToken)
+            .neq('id', currentUser.id);
         await Supabase.instance.client
             .from('users')
             .update({'fcm_token': newToken})
