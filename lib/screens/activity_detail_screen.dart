@@ -235,6 +235,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         'user_id': userId,
         'status': 'approved',
       });
+      final joinUserData = await _supabase.from('users').select('display_name').eq('id', userId).maybeSingle();
+      final joinUserName = joinUserData?['display_name'] as String? ?? '';
+      NotificationService.notifyActivityJoined(widget.activity['id'].toString(), joinUserName);
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -256,11 +259,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     setState(() => _leaving = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
+      final leaveUserData = await _supabase.from('users').select('display_name').eq('id', userId).maybeSingle();
+      final leaveUserName = leaveUserData?['display_name'] as String? ?? '';
       await _supabase
           .from('activity_participants')
           .delete()
           .eq('activity_id', widget.activity['id'])
           .eq('user_id', userId);
+      NotificationService.notifyActivityLeft(widget.activity['id'].toString(), leaveUserName);
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
