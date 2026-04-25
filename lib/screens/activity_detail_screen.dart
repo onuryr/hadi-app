@@ -10,6 +10,7 @@ import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../services/notification_service.dart';
 import '../services/rating_service.dart';
+import '../services/report_block_service.dart';
 import '../utils/category_defaults.dart';
 import '../widgets/star_rating.dart';
 import 'chat_screen.dart';
@@ -158,22 +159,25 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _rateUser(String ratedUserId, int rating) async {
+    final prev = _myRatings[ratedUserId];
+    setState(() => _myRatings[ratedUserId] = rating);
     try {
       await RatingService.rate(
         activityId: widget.activity['id'].toString(),
         ratedUserId: ratedUserId,
         rating: rating,
       );
-      setState(() => _myRatings[ratedUserId] = rating);
+    } catch (_) {
       if (mounted) {
+        setState(() {
+          if (prev == null) {
+            _myRatings.remove(ratedUserId);
+          } else {
+            _myRatings[ratedUserId] = prev;
+          }
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Puanın kaydedildi')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          const SnackBar(content: Text('Puan kaydedilemedi, tekrar dene')),
         );
       }
     }
@@ -324,9 +328,57 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     return LatLng(y, x);
   }
 
+  bool get _isApprovedParticipant {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return false;
+    return _participants.any((p) => p['user_id'] == userId && p['status'] == 'approved');
+  }
+
   bool get _isParticipant {
     final userId = _supabase.auth.currentUser?.id;
     return _participants.any((p) => p['user_id'] == userId);
+  }
+
+  List<Widget> _buildRatingSection() {
+    final currentUserId = _supabase.auth.currentUser?.id;
+    final others = _participants
+        .where((p) => p['status'] == 'approved' && p['user_id'] != currentUserId)
+        .toList();
+    if (others.isEmpty) return [];
+    return [
+      const SizedBox(height: 16),
+      const Divider(),
+      const Text(
+        'Puan Ver',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 8),
+      ...others.map((p) {
+        final userId = p['user_id'].toString();
+        final name = p['users']?['display_name'] ?? 'Bilinmiyor';
+        final avatarUrl = p['users']?['avatar_url'] as String?;
+        final myRating = _myRatings[userId] ?? 0;
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            backgroundImage: avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
+            child: avatarUrl == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?') : null,
+          ),
+          title: Text(name),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: StarRating(
+              value: myRating,
+              size: 24,
+              onChanged: (r) => _rateUser(userId, r),
+            ),
+          ),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId)),
+          ),
+        );
+      }),
+    ];
   }
 
   @override
@@ -376,6 +428,43 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   : const Icon(Icons.delete_outline),
               tooltip: 'Aktiviteyi sil',
               onPressed: _deleting ? null : _deleteActivity,
+            ),
+          if (!_isCreator && !_loading)
+            PopupMenuButton<String>(
+              onSelected: (value) async {
+                final activityId = widget.activity['id']?.toString() ?? '';
+                final creatorId = _fullActivity['creator_id']?.toString() ?? '';
+                if (value == 'report') {
+                  final ok = await ReportBlockService.showReportDialog(
+                    context,
+                    targetType: 'activity',
+                    targetId: activityId,
+                  );
+                  if (ok && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Raporunuz iletildi')),
+                    );
+                  }
+                } else if (value == 'block') {
+                  final creatorName = _participants
+                          .firstWhere(
+                            (p) => p['user_id']?.toString() == creatorId,
+                            orElse: () => <String, dynamic>{},
+                          )['users']?['display_name']
+                          ?.toString() ??
+                      'Kullanıcı';
+                  final blocked = await ReportBlockService.showBlockConfirmDialog(
+                    context,
+                    userId: creatorId,
+                    displayName: creatorName,
+                  );
+                  if (blocked && mounted) Navigator.of(context).pop();
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'report', child: Text('Raporla')),
+                PopupMenuItem(value: 'block', child: Text('Engelle')),
+              ],
             ),
         ],
       ),
@@ -427,18 +516,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   ),
                 ),
                 const Divider(),
-                Text(
-                  _isPast && _wasMember ? 'Katılımcıları Puanla' : 'Katılımcılar',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                const Text(
+                  'Katılımcılar',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 ..._participants.map((p) {
                   final userId = p['user_id']?.toString();
                   final name = p['users']?['display_name'] ?? 'Bilinmiyor';
                   final avatarUrl = p['users']?['avatar_url'] as String?;
-                  final currentUserId = _supabase.auth.currentUser?.id;
-                  final canRate = _isPast && _wasMember && userId != null && userId != currentUserId;
-                  final myRating = userId != null ? (_myRatings[userId] ?? 0) : 0;
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
@@ -446,16 +532,6 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                       child: avatarUrl == null ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?') : null,
                     ),
                     title: Text(name),
-                    subtitle: canRate
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: StarRating(
-                              value: myRating,
-                              size: 24,
-                              onChanged: (r) => _rateUser(userId, r),
-                            ),
-                          )
-                        : null,
                     onTap: userId == null
                         ? null
                         : () => Navigator.of(context).push(
@@ -463,6 +539,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             ),
                   );
                 }),
+                if (_isPast && _isApprovedParticipant) ..._buildRatingSection(),
                 const Divider(height: 32),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
