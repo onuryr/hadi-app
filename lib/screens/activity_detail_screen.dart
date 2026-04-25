@@ -844,6 +844,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               },
                               icon: const Icon(Icons.directions),
                               label: const Text('Yol Tarifi Al'),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(double.infinity, 56),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 14, horizontal: 16),
+                                alignment: Alignment.centerLeft,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 8),
                           ],

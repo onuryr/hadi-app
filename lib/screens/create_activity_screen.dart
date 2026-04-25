@@ -321,8 +321,12 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                     : 'Konum seçildi: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}',
               ),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                minimumSize: const Size(double.infinity, 56),
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                 alignment: Alignment.centerLeft,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
             const SizedBox(height: 16),
