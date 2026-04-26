@@ -164,6 +164,11 @@ class _LoginScreenState extends State<LoginScreen> {
         AppLocaleMode.en => 'English',
       };
 
+  String _localeFlag(AppLocaleMode mode) => switch (mode) {
+        AppLocaleMode.tr => '🇹🇷',
+        AppLocaleMode.en => '🇬🇧',
+      };
+
   Future<void> _openLanguageSheet() async {
     final picked = await showModalBottomSheet<AppLocaleMode>(
       context: context,
@@ -200,7 +205,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return ListenableBuilder(
       listenable: localeNotifier,
       builder: (context, _) {
-        final l = AppLocalizations.of(context);
         return Material(
           color: Theme.of(context).colorScheme.surface,
           elevation: 1,
@@ -213,10 +217,10 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.translate, size: 18),
+                  Text(_localeFlag(localeNotifier.mode), style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 8),
                   Text(
-                    '${l.language}: ${_localeLabel(localeNotifier.mode)}',
+                    _localeLabel(localeNotifier.mode),
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const Icon(Icons.arrow_drop_down, size: 20),
