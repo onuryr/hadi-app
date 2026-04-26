@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../l10n/app_localizations.dart';
 import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../services/notification_service.dart';
@@ -109,17 +110,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Aktiviteyi iptal et?'),
-        content: const Text(
-            'Katılımcılar bilgilendirilecek ve aktivite iptal edildi olarak işaretlenecek.'),
+        title: Text(AppLocalizations.of(context).cancelDialogTitle),
+        content: Text(AppLocalizations.of(context).cancelDialogContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Vazgeç'),
+            child: Text(AppLocalizations.of(context).giveUp),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('İptal Et', style: TextStyle(color: Color(0xFFB3261E))),
+            child: Text(AppLocalizations.of(context).cancelIt, style: const TextStyle(color: Color(0xFFB3261E))),
           ),
         ],
       ),
@@ -138,14 +138,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aktivite iptal edildi')),
+          SnackBar(content: Text(AppLocalizations.of(context).activityCancelled)),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _cancelling = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('İptal hatası: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).cancelError}: $e')),
         );
       }
     }
@@ -155,16 +155,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Aktiviteyi sil?'),
-        content: const Text(
-            'Bu aktivite ve tüm katılımcıları kalıcı olarak silinecek. Emin misin?'),
+        title: Text(AppLocalizations.of(context).deleteDialogTitle),
+        content: Text(AppLocalizations.of(context).deleteDialogContent),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('İptal')),
+              child: Text(AppLocalizations.of(context).cancel)),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Sil', style: TextStyle(color: Color(0xFFB3261E))),
+            child: Text(AppLocalizations.of(context).delete, style: const TextStyle(color: Color(0xFFB3261E))),
           ),
         ],
       ),
@@ -185,7 +184,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aktivite silindi')),
+          SnackBar(content: Text(AppLocalizations.of(context).activityDeleted)),
         );
       }
     } catch (e) {
@@ -294,7 +293,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     final max = _fullActivity['max_participants'] as int?;
     if (max != null && _approvedParticipants.length >= max) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aktivite dolu, katılamazsın')),
+        SnackBar(content: Text(AppLocalizations.of(context).joinFull)),
       );
       return;
     }
@@ -318,7 +317,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Katılım isteğiniz gönderildi')),
+          SnackBar(content: Text(AppLocalizations.of(context).joinRequestSent)),
         );
       }
     } catch (e) {
@@ -352,7 +351,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aktiviteden ayrıldınız')),
+          SnackBar(content: Text(AppLocalizations.of(context).leftActivitySnack)),
         );
       }
     } catch (e) {
@@ -377,7 +376,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Katılım onaylandı')),
+          SnackBar(content: Text(AppLocalizations.of(context).joinApproved)),
         );
       }
     } catch (e) {
@@ -402,7 +401,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       await _loadParticipants();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Katılım reddedildi')),
+          SnackBar(content: Text(AppLocalizations.of(context).joinRejected)),
         );
       }
     } catch (e) {
@@ -493,7 +492,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       const SizedBox(height: 8),
       ...others.map((p) {
         final userId = p['user_id'].toString();
-        final name = p['users']?['display_name'] ?? 'Bilinmiyor';
+        final name = p['users']?['display_name'] ?? AppLocalizations.of(context).unknownUser;
         final avatarUrl = p['users']?['avatar_url'] as String?;
         final myRating = _myRatings[userId] ?? 0;
         return ListTile(
@@ -537,7 +536,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           if (_wasMember)
             IconButton(
               icon: const Icon(Icons.chat_bubble_outline),
-              tooltip: 'Sohbet',
+              tooltip: AppLocalizations.of(context).chatLabel,
               onPressed: _openChat,
             ),
           IconButton(
@@ -545,12 +544,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               _isFavorite ? Icons.favorite : Icons.favorite_border,
               color: _isFavorite ? Colors.red : null,
             ),
-            tooltip: 'Favori',
+            tooltip: AppLocalizations.of(context).favorites,
             onPressed: _toggleFavorite,
           ),
           IconButton(
             icon: const Icon(Icons.share_outlined),
-            tooltip: 'Paylaş',
+            tooltip: AppLocalizations.of(context).share,
             onPressed: _shareActivity,
           ),
           if (_isCreator && !_loading)
@@ -563,16 +562,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               },
               itemBuilder: (_) => [
                 if (!_isPast)
-                  const PopupMenuItem(
-                      value: 'edit', child: Text('Düzenle')),
+                  PopupMenuItem(
+                      value: 'edit', child: Text(AppLocalizations.of(context).edit)),
                 if (!_isPast && !_isCancelled)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'cancel',
-                    child: Text('Aktiviteyi İptal Et'),
+                    child: Text(AppLocalizations.of(context).cancelActivity),
                   ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
-                  child: Text('Sil', style: TextStyle(color: Color(0xFFB3261E))),
+                  child: Text(AppLocalizations.of(context).delete, style: const TextStyle(color: Color(0xFFB3261E))),
                 ),
               ],
             ),
@@ -601,7 +600,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             orElse: () => <String, dynamic>{},
                           )['users']?['display_name']
                           ?.toString() ??
-                      'Kullanıcı';
+                      AppLocalizations.of(context).unknownUser;
                   final blocked =
                       await ReportBlockService.showBlockConfirmDialog(
                     context,
@@ -611,9 +610,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   if (blocked && mounted) Navigator.of(context).pop();
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'report', child: Text('Raporla')),
-                PopupMenuItem(value: 'block', child: Text('Engelle')),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'report', child: Text(AppLocalizations.of(context).report)),
+                PopupMenuItem(value: 'block', child: Text(AppLocalizations.of(context).block)),
               ],
             ),
         ],
@@ -650,7 +649,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             color: Colors.red.shade700),
                         const SizedBox(width: 8),
                         Text(
-                          'İptal Edildi',
+                          AppLocalizations.of(context).cancelledLabel,
                           style: TextStyle(
                             color: Colors.red.shade700,
                             fontWeight: FontWeight.bold,
@@ -691,16 +690,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                       ),
                       if (_isCreator && _pendingParticipants.isNotEmpty) ...[
                         const Divider(),
-                        const Text(
-                          'Bekleyen İstekler',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context).pendingRequests,
+                          style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
                         ..._pendingParticipants.map((p) {
                           final pUserId = p['user_id']?.toString() ?? '';
                           final pName =
-                              p['users']?['display_name'] ?? 'Bilinmiyor';
+                              p['users']?['display_name'] ?? AppLocalizations.of(context).unknownUser;
                           final pAvatarUrl =
                               p['users']?['avatar_url'] as String?;
                           final isThisProcessing =
@@ -769,16 +768,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         }),
                       ],
                       const Divider(),
-                      const Text(
-                        'Katılımcılar',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).participantsHeader,
+                        style: const TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       ..._approvedParticipants.map((p) {
                         final userId = p['user_id']?.toString();
                         final name =
-                            p['users']?['display_name'] ?? 'Bilinmiyor';
+                            p['users']?['display_name'] ?? AppLocalizations.of(context).unknownUser;
                         final avatarUrl =
                             p['users']?['avatar_url'] as String?;
                         return ListTile(
@@ -878,7 +877,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text('Aktivite iptal edildi'),
+                      child: Text(AppLocalizations.of(context).activityCancelledButton),
                     )
                   : _isParticipant
                       ? ElevatedButton(
@@ -891,7 +890,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           ),
                           child: _leaving
                               ? const CircularProgressIndicator()
-                              : const Text('Ayrıl'),
+                              : Text(AppLocalizations.of(context).leaveButton),
                         )
                       : ElevatedButton(
                           onPressed: _joining ? null : _joinActivity,
@@ -901,7 +900,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           ),
                           child: _joining
                               ? const CircularProgressIndicator()
-                              : const Text('Katıl'),
+                              : Text(AppLocalizations.of(context).joinButton),
                         ),
             ),
     );

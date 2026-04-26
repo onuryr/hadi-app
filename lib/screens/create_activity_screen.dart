@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_localizations.dart';
 import '../services/notification_service.dart';
 import 'map_picker_screen.dart';
 
@@ -106,18 +107,18 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     return _supabase.storage.from('activity-images').getPublicUrl(path);
   }
 
-  final _categories = [
-    {'id': 1, 'name': 'Yürüyüş'},
-    {'id': 2, 'name': 'Koşu'},
-    {'id': 3, 'name': 'Halı Saha'},
-    {'id': 4, 'name': 'Basketbol'},
-    {'id': 5, 'name': 'Bisiklet'},
-    {'id': 6, 'name': 'Konser'},
-    {'id': 7, 'name': 'Tiyatro'},
-    {'id': 8, 'name': 'Yemek'},
-    {'id': 9, 'name': 'Müze'},
-    {'id': 10, 'name': 'Sinema'},
-  ];
+  List<Map<String, dynamic>> _categoriesFor(AppLocalizations l) => [
+        {'id': 1, 'name': l.catWalk},
+        {'id': 2, 'name': l.catRun},
+        {'id': 3, 'name': l.catFootball},
+        {'id': 4, 'name': l.catBasketball},
+        {'id': 5, 'name': l.catCycling},
+        {'id': 6, 'name': l.catConcert},
+        {'id': 7, 'name': l.catTheatre},
+        {'id': 8, 'name': l.catFood},
+        {'id': 9, 'name': l.catMuseum},
+        {'id': 10, 'name': l.catCinema},
+      ];
 
   Future<void> _pickLocation() async {
     final result = await Navigator.of(context).push<MapPickerResult>(
@@ -168,7 +169,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         setState(() => _loading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Lütfen haritadan konum seçin')),
+            SnackBar(content: Text(AppLocalizations.of(context).pleasePickLocation)),
           );
         }
         return;
@@ -220,14 +221,14 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aktivite oluşturuldu!')),
+          SnackBar(content: Text(AppLocalizations.of(context).activityCreated)),
         );
         Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
         );
       }
     } finally {
@@ -237,9 +238,11 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final categories = _categoriesFor(l);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Aktiviteyi Düzenle' : 'Aktivite Oluştur'),
+        title: Text(_isEdit ? l.editActivityTitle : l.createActivity),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Form(
@@ -267,14 +270,14 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                           : null),
                 ),
                 child: (_selectedImage == null && _existingImageUrl == null)
-                    ? const Column(
+                    ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_photo_alternate, size: 48, color: Color(0xFF616161)),
-                          SizedBox(height: 8),
-                          Text('Resim ekle (opsiyonel)', style: TextStyle(color: Color(0xFF616161))),
-                          Text('Seçmezsen kategori resmi kullanılır',
-                              style: TextStyle(color: Color(0xFF616161), fontSize: 12)),
+                          const Icon(Icons.add_photo_alternate, size: 48, color: Color(0xFF616161)),
+                          const SizedBox(height: 8),
+                          Text(l.imageOptionalAdd, style: const TextStyle(color: Color(0xFF616161))),
+                          Text(l.optionalImageHint,
+                              style: const TextStyle(color: Color(0xFF616161), fontSize: 12)),
                         ],
                       )
                     : Align(
@@ -295,21 +298,21 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Başlık',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.titleLabel,
+                border: const OutlineInputBorder(),
               ),
-              validator: (v) => v!.isEmpty ? 'Başlık gerekli' : null,
+              validator: (v) => v!.isEmpty ? l.titleRequired : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _locationNameController,
-              decoration: const InputDecoration(
-                labelText: 'Konum adı',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.location_on),
+              decoration: InputDecoration(
+                labelText: l.locationNameLabel,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.location_on),
               ),
-              validator: (v) => v!.isEmpty ? 'Konum gerekli' : null,
+              validator: (v) => v!.isEmpty ? l.locationRequired : null,
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -317,8 +320,11 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
               icon: const Icon(Icons.map),
               label: Text(
                 _selectedLocation == null
-                    ? 'Haritadan konum seç'
-                    : 'Konum seçildi: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}',
+                    ? l.pickLocationFromMap
+                    : l.locationPickedAt(
+                        _selectedLocation!.latitude.toStringAsFixed(4),
+                        _selectedLocation!.longitude.toStringAsFixed(4),
+                      ),
               ),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
@@ -332,9 +338,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Açıklama (opsiyonel)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l.descriptionOptionalLabel,
+                border: const OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
@@ -342,14 +348,12 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
             DropdownButtonFormField<int>(
               value: _selectedCategory,
               decoration: InputDecoration(
-                labelText: 'Kategori',
+                labelText: l.categoryLabel,
                 border: const OutlineInputBorder(),
-                helperText: widget.lockCategory
-                    ? 'Katılımcı olduğu için kategori değiştirilemez'
-                    : null,
+                helperText: widget.lockCategory ? l.categoryLockedHelper : null,
                 suffixIcon: widget.lockCategory ? const Icon(Icons.lock, size: 18) : null,
               ),
-              items: _categories.map((c) {
+              items: categories.map((c) {
                 return DropdownMenuItem<int>(
                   value: c['id'] as int,
                   child: Text(c['name'] as String),
@@ -360,7 +364,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Tarih & Saat'),
+              title: Text(l.dateTimeLabel),
               subtitle: Text(
                 '${_scheduledAt.day}/${_scheduledAt.month}/${_scheduledAt.year} '
                 '${_scheduledAt.hour.toString().padLeft(2, '0')}:${_scheduledAt.minute.toString().padLeft(2, '0')}',
@@ -371,7 +375,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
             const Divider(),
             Row(
               children: [
-                const Text('Maksimum katılımcı:'),
+                Text(l.maxParticipantsRowLabel),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.remove),
@@ -397,7 +401,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
               ),
               child: _loading
                   ? const CircularProgressIndicator()
-                  : Text(_isEdit ? 'Güncelle' : 'Oluştur'),
+                  : Text(_isEdit ? l.update : l.createButton),
             ),
           ],
         ),

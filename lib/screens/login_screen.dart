@@ -85,24 +85,51 @@ class _LoginScreenState extends State<LoginScreen> {
         } catch (_) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Hata: ${e.message}')),
+              SnackBar(content: Text(_friendlyAuthMessage(e))),
             );
           }
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: ${e.message}')),
+          SnackBar(content: Text(_friendlyAuthMessage(e))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          const SnackBar(content: Text('Bir sorun oluştu, biraz sonra tekrar dener misin?')),
         );
       }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  String _friendlyAuthMessage(AuthException e) {
+    final code = e.code ?? '';
+    final msg = e.message.toLowerCase();
+    if (code == 'invalid_credentials' || msg.contains('invalid login credentials') || msg.contains('invalid_credentials')) {
+      return 'Email veya şifre hatalı. Tekrar dener misin?';
+    }
+    if (code == 'email_not_confirmed' || msg.contains('email not confirmed')) {
+      return 'Email adresini henüz doğrulamadın. Gelen koda bak.';
+    }
+    if (code == 'user_already_exists' || code == 'email_exists' || msg.contains('already registered') || msg.contains('user already')) {
+      return 'Bu email zaten kayıtlı. Giriş yapmayı dener misin?';
+    }
+    if (code == 'weak_password' || msg.contains('password should be') || msg.contains('weak password')) {
+      return 'Şifre çok zayıf. En az 6 karakter, harf ve rakam karışık dene.';
+    }
+    if (code == 'over_request_rate_limit' || msg.contains('rate limit') || msg.contains('too many')) {
+      return 'Çok fazla deneme yaptın, biraz bekle ve tekrar dene.';
+    }
+    if (code == 'signup_disabled' || msg.contains('signup is disabled')) {
+      return 'Şu an yeni kayıt alınmıyor.';
+    }
+    if (msg.contains('network') || msg.contains('connection') || msg.contains('timeout')) {
+      return 'İnternet bağlantısı yok gibi. Bağlantını kontrol et.';
+    }
+    return 'Bir sorun oluştu, biraz sonra tekrar dener misin?';
   }
 
   Future<void> _verifyOtp() async {

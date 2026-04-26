@@ -182,13 +182,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       setState(() => _user = {...?_user, 'avatar_url': url});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fotoğraf güncellendi')),
+          SnackBar(content: Text(AppLocalizations.of(context).photoUpdated)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fotoğraf yüklenemedi: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).photoUploadFailed}: $e')),
         );
       }
     }
@@ -316,6 +316,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
           if (_isSelf && !_loading)
             PopupMenuButton<String>(
+              icon: const Icon(Icons.settings_outlined),
+              tooltip: l.settings,
               onSelected: (value) {
                 if (value == 'blocked') {
                   Navigator.of(context).push(
@@ -336,7 +338,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             PopupMenuButton<String>(
               onSelected: (value) async {
                 final userId = _viewedUserId;
-                final name = _user?['display_name']?.toString() ?? 'Kullanıcı';
+                final name = _user?['display_name']?.toString() ?? AppLocalizations.of(context).unknownUser;
                 if (value == 'report') {
                   final ok = await ReportBlockService.showReportDialog(
                     context,
@@ -431,7 +433,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             const Icon(Icons.star, color: Colors.amber, size: 18),
                             const SizedBox(width: 4),
                             Text(
-                              '${_avgRating.toStringAsFixed(1)} ($_ratingCount değerlendirme)',
+                              '${_avgRating.toStringAsFixed(1)} (${AppLocalizations.of(context).ratingsCount(_ratingCount)})',
                               style: const TextStyle(color: Colors.grey),
                             ),
                           ],
@@ -443,17 +445,16 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               controller: _bioController,
                               textAlign: TextAlign.center,
                               maxLines: 3,
-                              decoration: const InputDecoration(
-                                labelText: 'Hakkımda',
-                                border: OutlineInputBorder(),
-                                hintText: 'Kendinden bahset...',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(context).aboutMeLabel,
+                                border: const OutlineInputBorder(),
                               ),
                             )
                           : Builder(builder: (_) {
                               final bio = (_user?['bio'] as String?)?.trim() ?? '';
                               if (bio.isEmpty) {
                                 return Text(
-                                  _isSelf ? 'Hakkımda kısmı boş' : 'Henüz bir şey yazmamış',
+                                  _isSelf ? AppLocalizations.of(context).aboutMeEmptySelf : AppLocalizations.of(context).aboutMeEmptyOther,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
                                 );

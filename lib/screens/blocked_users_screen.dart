@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/report_block_service.dart';
 
 class BlockedUsersScreen extends StatefulWidget {
@@ -27,8 +28,9 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Yüklenemedi: $e')),
+          SnackBar(content: Text('${l.error}: $e')),
         );
       }
     }
@@ -36,7 +38,8 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
 
   Future<void> _unblock(Map<String, dynamic> entry) async {
     final userId = entry['userId']?.toString() ?? '';
-    final name = entry['displayName']?.toString() ?? 'Kullanıcı';
+    final l = AppLocalizations.of(context);
+    final name = entry['displayName']?.toString() ?? l.unknownUser;
     setState(() => _unblocking.add(userId));
     try {
       await ReportBlockService.unblockUser(userId);
@@ -46,14 +49,14 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
           _unblocking.remove(userId);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$name engeli kaldırıldı')),
+          SnackBar(content: Text('$name — ${AppLocalizations.of(context).unblockedSuccess}')),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _unblocking.remove(userId));
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).unblockFailed}: $e')),
         );
       }
     }
@@ -61,21 +64,22 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Engellediklerim'),
+        title: Text(l.blockedUsers),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _blocked.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.block, size: 48, color: Colors.grey),
-                      SizedBox(height: 8),
-                      Text('Engellenmiş kullanıcı yok', style: TextStyle(color: Colors.grey)),
+                      const Icon(Icons.block, size: 48, color: Colors.grey),
+                      const SizedBox(height: 8),
+                      Text(l.noBlockedUsers, style: const TextStyle(color: Colors.grey)),
                     ],
                   ),
                 )
@@ -84,7 +88,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                   itemBuilder: (context, index) {
                     final entry = _blocked[index];
                     final userId = entry['userId']?.toString() ?? '';
-                    final name = entry['displayName']?.toString() ?? 'Bilinmiyor';
+                    final name = entry['displayName']?.toString() ?? l.unknownUser;
                     final avatarUrl = entry['avatarUrl'] as String?;
                     final isUnblocking = _unblocking.contains(userId);
 
@@ -106,7 +110,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                             )
                           : TextButton(
                               onPressed: () => _unblock(entry),
-                              child: const Text('Engeli Kaldır', style: TextStyle(color: Colors.red)),
+                              child: Text(l.unblock, style: const TextStyle(color: Colors.red)),
                             ),
                     );
                   },

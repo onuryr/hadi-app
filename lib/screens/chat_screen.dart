@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_localizations.dart';
 import '../services/chat_service.dart';
 import '../services/notification_service.dart';
 import '../services/report_block_service.dart';
@@ -192,9 +193,10 @@ class _ChatScreenState extends State<ChatScreen> {
             msg.contains('failed host lookup') ||
             msg.contains('connection refused') ||
             msg.contains('no address associated');
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isOffline ? 'İnternet bağlantısı yok' : 'Gönderilemedi: $e'),
+            content: Text(isOffline ? l.noInternetConnection : '${l.sendFailed}: $e'),
           ),
         );
       }
@@ -212,11 +214,12 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  String _dayLabel(DateTime dt) {
+  String _dayLabel(BuildContext context, DateTime dt) {
     final now = DateTime.now();
-    if (_sameDay(dt, now)) return 'Bugün';
+    final l = AppLocalizations.of(context);
+    if (_sameDay(dt, now)) return l.today;
     final yesterday = now.subtract(const Duration(days: 1));
-    if (_sameDay(dt, yesterday)) return 'Dün';
+    if (_sameDay(dt, yesterday)) return l.yesterday;
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
@@ -248,7 +251,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       color: Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(_dayLabel(dt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    child: Text(_dayLabel(context, dt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   ),
                 ),
               );
@@ -286,9 +289,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             bottomRight: Radius.circular(16),
                           ),
                         ),
-                        child: const Text(
-                          'Bu kullanıcı engellendi',
-                          style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 13),
+                        child: Text(
+                          AppLocalizations.of(context).userBlocked,
+                          style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 13),
                         ),
                       ),
                     ],

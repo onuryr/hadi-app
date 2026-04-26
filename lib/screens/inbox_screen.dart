@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import '../l10n/app_localizations.dart';
 import '../services/chat_service.dart';
 import '../services/deep_link_service.dart';
 import '../utils/category_defaults.dart';
@@ -48,7 +49,7 @@ class _InboxScreenState extends State<InboxScreen> {
     await SharePlus.instance.share(ShareParams(text: text));
   }
 
-  String _formatTime(String createdAt) {
+  String _formatTime(BuildContext context, String createdAt) {
     final dt = DateTime.parse(createdAt).toLocal();
     final now = DateTime.now();
     if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
@@ -56,28 +57,29 @@ class _InboxScreenState extends State<InboxScreen> {
     }
     final yesterday = now.subtract(const Duration(days: 1));
     if (dt.year == yesterday.year && dt.month == yesterday.month && dt.day == yesterday.day) {
-      return 'Dün';
+      return AppLocalizations.of(context).yesterday;
     }
     return '${dt.day}/${dt.month}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mesajlar'),
+        title: Text(l.messages),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _items.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-                      SizedBox(height: 8),
-                      Text('Henüz mesaj yok', style: TextStyle(color: Colors.grey)),
+                      const Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                      const SizedBox(height: 8),
+                      Text(l.noConversations, style: const TextStyle(color: Colors.grey)),
                     ],
                   ),
                 )
@@ -126,7 +128,7 @@ class _InboxScreenState extends State<InboxScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text(_formatTime(msg['created_at']), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            Text(_formatTime(context, msg['created_at']), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                             const SizedBox(height: 4),
                             if (unread > 0)
                               Container(

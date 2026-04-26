@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_localizations.dart';
 
 class ReportBlockService {
   static const _apiBase = 'https://hadi-production-e4f3.up.railway.app';
@@ -32,8 +33,8 @@ class ReportBlockService {
           }),
         )
         .timeout(const Duration(seconds: 10));
-    if (resp.statusCode != 200 && resp.statusCode != 201) {
-      throw Exception('Rapor gönderilemedi (${resp.statusCode})');
+    if (resp.statusCode != 200 && resp.statusCode != 201 && resp.statusCode != 204) {
+      throw Exception('HTTP ${resp.statusCode}');
     }
   }
 
@@ -46,7 +47,7 @@ class ReportBlockService {
         )
         .timeout(const Duration(seconds: 10));
     if (resp.statusCode != 200 && resp.statusCode != 201 && resp.statusCode != 204) {
-      throw Exception('Kullanıcı engellenemedi (${resp.statusCode})');
+      throw Exception('HTTP ${resp.statusCode}');
     }
   }
 
@@ -58,7 +59,7 @@ class ReportBlockService {
         )
         .timeout(const Duration(seconds: 10));
     if (resp.statusCode != 200 && resp.statusCode != 204) {
-      throw Exception('Engel kaldırılamadı (${resp.statusCode})');
+      throw Exception('HTTP ${resp.statusCode}');
     }
   }
 
@@ -70,7 +71,7 @@ class ReportBlockService {
         )
         .timeout(const Duration(seconds: 10));
     if (resp.statusCode != 200) {
-      throw Exception('Liste alınamadı (${resp.statusCode})');
+      throw Exception('HTTP ${resp.statusCode}');
     }
     final list = jsonDecode(resp.body) as List;
     return list.cast<Map<String, dynamic>>();
@@ -78,13 +79,13 @@ class ReportBlockService {
 
   // --- Dialog helpers ---
 
-  static const List<String> reportReasons = [
-    'Spam',
-    'Uygunsuz içerik',
-    'Taciz',
-    'Yanıltıcı',
-    'Diğer',
-  ];
+  static List<String> _localizedReasons(AppLocalizations l) => [
+        l.reasonSpam,
+        l.reasonInappropriate,
+        l.reasonHarassment,
+        l.reasonMisleading,
+        l.reasonOther,
+      ];
 
   /// Shows the report dialog and submits the report if user confirms.
   /// [targetType] is 'user' or 'activity'. Returns true if submitted.
@@ -93,7 +94,9 @@ class ReportBlockService {
     required String targetType,
     required String targetId,
   }) async {
-    String? selectedReason = reportReasons.first;
+    final l = AppLocalizations.of(context);
+    final reasons = _localizedReasons(l);
+    String? selectedReason = reasons.first;
     final descController = TextEditingController();
     bool submitting = false;
 
@@ -101,15 +104,15 @@ class ReportBlockService {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setStateDialog) => AlertDialog(
-          title: const Text('Raporla'),
+          title: Text(l.reportTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Neden raporluyorsunuz?'),
+                Text(l.whyReport),
                 const SizedBox(height: 8),
-                ...reportReasons.map(
+                ...reasons.map(
                   (r) => RadioListTile<String>(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
@@ -123,9 +126,9 @@ class ReportBlockService {
                 TextField(
                   controller: descController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Açıklama (opsiyonel)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l.descriptionOptional,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
@@ -134,7 +137,7 @@ class ReportBlockService {
           actions: [
             TextButton(
               onPressed: submitting ? null : () => Navigator.of(ctx).pop(false),
-              child: const Text('İptal'),
+              child: Text(l.cancel),
             ),
             TextButton(
               onPressed: submitting
@@ -154,12 +157,12 @@ class ReportBlockService {
                         if (ctx.mounted) {
                           Navigator.of(ctx).pop(false);
                           ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(content: Text('Hata: $e')),
+                            SnackBar(content: Text('${l.reportFailed}: $e')),
                           );
                         }
                       }
                     },
-              child: const Text('Gönder'),
+              child: Text(l.send),
             ),
           ],
         ),
@@ -177,22 +180,20 @@ class ReportBlockService {
     required String userId,
     required String displayName,
   }) async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kullanıcıyı engelle?'),
-        content: Text(
-          '$displayName adlı kullanıcıyı engellemek istediğinizden emin misiniz? '
-          'Engellenen kullanıcıların aktiviteleri size gösterilmez.',
-        ),
+        title: Text(l.blockUserDialogTitle),
+        content: Text(l.blockUserDialogContent(displayName)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('İptal'),
+            child: Text(l.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Engelle', style: TextStyle(color: Colors.red)),
+            child: Text(l.block, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -203,14 +204,14 @@ class ReportBlockService {
       await blockUser(userId);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$displayName engellendi')),
+          SnackBar(content: Text(l.userBlockedSnack(displayName))),
         );
       }
       return true;
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${l.blockFailed}: $e')),
         );
       }
       return false;

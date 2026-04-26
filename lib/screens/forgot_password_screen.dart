@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_localizations.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -61,9 +62,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Şifremi Unuttum'),
+        title: Text(l.forgotPassword),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -72,19 +74,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 16),
-              const Text(
-                'Şifre sıfırlama bağlantısını göndermemiz için e-posta adresinizi girin.',
-                style: TextStyle(color: Colors.grey),
+              Text(
+                l.resetPasswordHint,
+                style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 24),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 enabled: !_sent,
-                decoration: const InputDecoration(
-                  labelText: 'E-posta',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
+                decoration: InputDecoration(
+                  labelText: l.email,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.email),
                 ),
               ),
               const SizedBox(height: 24),
@@ -101,10 +103,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     children: [
                       Icon(Icons.check_circle, color: Colors.green.shade700),
                       const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Spam kutusunu da kontrol edin.',
-                        ),
+                      Expanded(
+                        child: Text(l.resetSentInfo),
                       ),
                     ],
                   ),
@@ -112,7 +112,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Giriş ekranına dön'),
+                  child: Text(l.backToLogin),
                 ),
               ] else
                 ElevatedButton(
@@ -126,7 +126,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Sıfırlama Maili Gönder'),
+                      : Text(l.sendResetLink),
                 ),
             ],
           ),

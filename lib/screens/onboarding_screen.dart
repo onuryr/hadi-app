@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/app_localizations.dart';
 import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -23,39 +24,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _currentPage = 0;
 
-  final List<_OnboardingPage> _pages = [
-    const _OnboardingPage(
-      icon: Icons.explore,
-      title: 'Yakınındaki Aktiviteleri Keşfet',
-      description: 'Sana yakın yürüyüş, koşu, konser ve daha fazlasını mesafeye göre sıralı gör.',
-      color: Colors.deepPurple,
-    ),
-    const _OnboardingPage(
-      icon: Icons.group_add,
-      title: 'Aktivitelere Katıl',
-      description: 'Beğendiğin aktiviteye tek dokunuşla katıl, katılımcılarla tanış.',
-      color: Colors.indigo,
-    ),
-    const _OnboardingPage(
-      icon: Icons.add_circle_outline,
-      title: 'Kendi Aktiviteni Oluştur',
-      description: 'Birkaç dakikada bir aktivite oluştur, harita ile konum seç, resim ekle.',
-      color: Colors.teal,
-    ),
-    const _OnboardingPage(
-      icon: Icons.chat_bubble_outline,
-      title: 'İnsanlarla Tanış, Sohbet Et',
-      description: 'Katıldığın aktivitelerde grup sohbetine katıl, katılımcılarla tanış.',
-      color: Colors.orange,
-    ),
-    const _OnboardingPage(
-      icon: Icons.privacy_tip_outlined,
-      title: 'Konum ve Bildirim İzinleri',
-      description:
-          'Yakınındaki aktiviteleri göstermek için konumuna, etkinlik güncellemeleri için bildirim iznine ihtiyacımız var. Bir sonraki adımda sorulacak.',
-      color: Colors.blue,
-    ),
-  ];
+  List<_OnboardingPage> _buildPages(AppLocalizations l) => [
+        _OnboardingPage(
+          icon: Icons.explore,
+          title: l.onbDiscoverTitle,
+          description: l.onbDiscoverDesc,
+          color: Colors.deepPurple,
+        ),
+        _OnboardingPage(
+          icon: Icons.group_add,
+          title: l.onbJoinTitle,
+          description: l.onbJoinDesc,
+          color: Colors.indigo,
+        ),
+        _OnboardingPage(
+          icon: Icons.add_circle_outline,
+          title: l.onbCreateTitle,
+          description: l.onbCreateDesc,
+          color: Colors.teal,
+        ),
+        _OnboardingPage(
+          icon: Icons.chat_bubble_outline,
+          title: l.onbMeetTitle,
+          description: l.onbMeetDesc,
+          color: Colors.orange,
+        ),
+        _OnboardingPage(
+          icon: Icons.privacy_tip_outlined,
+          title: l.onbPermsTitle,
+          description: l.onbPermsDesc,
+          color: Colors.blue,
+        ),
+      ];
 
   Future<void> _finish() async {
     await OnboardingScreen.markSeen();
@@ -67,7 +67,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLast = _currentPage == _pages.length - 1;
+    final l = AppLocalizations.of(context);
+    final pages = _buildPages(l);
+    final isLast = _currentPage == pages.length - 1;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -78,22 +80,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 padding: const EdgeInsets.all(8),
                 child: TextButton(
                   onPressed: _finish,
-                  child: const Text('Atla'),
+                  child: Text(l.skipLabel),
                 ),
               ),
             ),
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 onPageChanged: (i) => setState(() => _currentPage = i),
-                itemBuilder: (context, index) => _pages[index],
+                itemBuilder: (context, index) => pages[index],
               ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                _pages.length,
+                pages.length,
                 (i) => AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -126,7 +128,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     backgroundColor: Colors.deepPurple,
                     foregroundColor: Colors.white,
                   ),
-                  child: Text(isLast ? 'Başla' : 'İleri'),
+                  child: Text(isLast ? l.startLabel : l.nextLabel),
                 ),
               ),
             ),

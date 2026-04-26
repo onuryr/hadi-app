@@ -109,6 +109,26 @@ class AppLocalizations {
   String get pickOnMap => _t('Haritadan Seç', 'Pick on Map');
   String get imageLabel => _t('Fotoğraf', 'Photo');
   String get addImage => _t('Fotoğraf Ekle', 'Add Photo');
+  String get editActivityTitle => _t('Aktiviteyi Düzenle', 'Edit Activity');
+  String get locationNameLabel => _t('Konum adı', 'Location name');
+  String get locationRequired => _t('Konum gerekli', 'Location is required');
+  String get pickLocationFromMap => _t('Haritadan konum seç', 'Pick location from map');
+  String locationPickedAt(String lat, String lng) => _t('Konum seçildi: $lat, $lng', 'Location picked: $lat, $lng');
+  String get descriptionOptionalLabel => _t('Açıklama (opsiyonel)', 'Description (optional)');
+  String get imageOptionalAdd => _t('Resim ekle (opsiyonel)', 'Add image (optional)');
+  String get dateTimeLabel => _t('Tarih & Saat', 'Date & Time');
+  String get maxParticipantsRowLabel => _t('Maksimum katılımcı:', 'Maximum participants:');
+  String get createButton => _t('Oluştur', 'Create');
+  String get catWalk => _t('Yürüyüş', 'Walk');
+  String get catRun => _t('Koşu', 'Run');
+  String get catFootball => _t('Halı Saha', 'Football');
+  String get catBasketball => _t('Basketbol', 'Basketball');
+  String get catCycling => _t('Bisiklet', 'Cycling');
+  String get catConcert => _t('Konser', 'Concert');
+  String get catTheatre => _t('Tiyatro', 'Theatre');
+  String get catFood => _t('Yemek', 'Food');
+  String get catMuseum => _t('Müze', 'Museum');
+  String get catCinema => _t('Sinema', 'Cinema');
 
   // ── Profile ──
   String get profile => _t('Profil', 'Profile');
@@ -186,6 +206,96 @@ class AppLocalizations {
   String get serverError => _t('Sunucu hatası', 'Server error');
   String get noInternetConnection => _t('İnternet bağlantısı yok', 'No internet connection');
   String get unknownError => _t('Bilinmeyen bir hata oluştu', 'An unknown error occurred');
+  String get today => _t('Bugün', 'Today');
+  String get yesterday => _t('Dün', 'Yesterday');
+  String get unknownUser => _t('Kullanıcı', 'User');
+  String get sendFailed => _t('Gönderilemedi', 'Could not send');
+  String get userBlocked => _t('Bu kullanıcı engellendi', 'This user is blocked');
+
+  // ── Activity detail / cancel-delete dialogs ──
+  String get cancelDialogTitle => _t('Aktiviteyi İptal Et?', 'Cancel activity?');
+  String get cancelDialogContent => _t('Katılımcılar bilgilendirilecek ve aktivite iptal edildi olarak işaretlenecek.', 'Participants will be notified and the activity will be marked as cancelled.');
+  String get giveUp => _t('Vazgeç', 'Never mind');
+  String get cancelIt => _t('İptal Et', 'Cancel It');
+  String get cancelError => _t('İptal hatası', 'Cancellation error');
+  String get deleteDialogTitle => _t('Aktiviteyi sil?', 'Delete activity?');
+  String get deleteDialogContent => _t('Bu aktivite ve tüm katılımcıları kalıcı olarak silinecek. Emin misin?', 'This activity and all participants will be permanently deleted. Are you sure?');
+  String get joinRequestSent => _t('Katılım isteğiniz gönderildi', 'Join request sent');
+  String get leftActivitySnack => _t('Aktiviteden ayrıldınız', 'You left the activity');
+  String get joinApproved => _t('Katılım onaylandı', 'Join approved');
+  String get joinRejected => _t('Katılım reddedildi', 'Join rejected');
+  String get pendingRequests => _t('Bekleyen İstekler', 'Pending Requests');
+  String get joinFull => _t('Aktivite dolu, katılamazsın', 'Activity is full');
+  String get cancelledLabel => _t('İptal Edildi', 'Cancelled');
+  String get activityCancelledButton => _t('Aktivite iptal edildi', 'Activity cancelled');
+  String get participantsHeader => _t('Katılımcılar', 'Participants');
+  String get joinButton => _t('Katıl', 'Join');
+  String get leaveButton => _t('Ayrıl', 'Leave');
+
+  // ── Block / Report ──
+  String get unblockedSuccess => _t('Kullanıcının engeli kaldırıldı', 'User unblocked');
+  String get unblockFailed => _t('Engel kaldırılamadı', 'Could not unblock');
+  String get reportSubmitted => _t('Raporunuz iletildi', 'Your report was submitted');
+  String get reportFailed => _t('Rapor gönderilemedi', 'Report could not be sent');
+  String get reportTitle => _t('Raporla', 'Report');
+  String get whyReport => _t('Neden raporluyorsunuz?', 'Why are you reporting?');
+  String get descriptionOptional => _t('Açıklama (opsiyonel)', 'Description (optional)');
+  String get reasonSpam => _t('Spam', 'Spam');
+  String get reasonInappropriate => _t('Uygunsuz içerik', 'Inappropriate content');
+  String get reasonHarassment => _t('Taciz', 'Harassment');
+  String get reasonMisleading => _t('Yanıltıcı', 'Misleading');
+  String get reasonOther => _t('Diğer', 'Other');
+  String get blockUserDialogTitle => _t('Kullanıcıyı engelle?', 'Block this user?');
+  String blockUserDialogContent(String displayName) => _t(
+        '$displayName adlı kullanıcıyı engellemek istediğinizden emin misiniz? Engellenen kullanıcıların aktiviteleri size gösterilmez.',
+        'Are you sure you want to block $displayName? Blocked users\' activities will not be shown to you.');
+  String userBlockedSnack(String displayName) => _t('$displayName engellendi', '$displayName has been blocked');
+  String get blockFailed => _t('Engelleme başarısız', 'Could not block');
+  String get sentLabel => _t('Gönder', 'Send');
+  String get photoUpdated => _t('Fotoğraf güncellendi', 'Photo updated');
+  String get photoUploadFailed => _t('Fotoğraf yüklenemedi', 'Could not upload photo');
+  String ratingsCount(int count) => _t('$count değerlendirme', '$count ratings');
+  String get aboutMeEmptySelf => _t('Hakkımda kısmı boş', 'Bio is empty');
+  String get aboutMeEmptyOther => _t('Henüz bir şey yazmamış', 'Has not written anything yet');
+  String get aboutMeLabel => _t('Hakkımda', 'About me');
+  String get resetSentInfo => _t('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Spam kutusunu da kontrol edin.', 'Password reset link sent to your email. Check your spam folder too.');
+  String get backToLogin => _t('Giriş ekranına dön', 'Back to login');
+  String get nextLabel => _t('İleri', 'Next');
+  String get startLabel => _t('Başla', 'Start');
+  String get onbMeetTitle => _t('İnsanlarla Tanış, Sohbet Et', 'Meet People, Chat');
+  String get onbMeetDesc => _t('Katıldığın aktivitelerde grup sohbetine katıl, katılımcılarla tanış.', 'Join the group chat in activities you attend and meet other participants.');
+  String get onbDiscoverTitle => _t('Yakınındaki Aktiviteleri Keşfet', 'Discover Nearby Activities');
+  String get onbDiscoverDesc => _t('Sana yakın yürüyüş, koşu, konser ve daha fazlasını mesafeye göre sıralı gör.', 'See walks, runs, concerts and more near you, sorted by distance.');
+  String get onbJoinTitle => _t('Aktivitelere Katıl', 'Join Activities');
+  String get onbJoinDesc => _t('Beğendiğin aktiviteye tek dokunuşla katıl, katılımcılarla tanış.', 'Join an activity you like with a single tap and meet other participants.');
+  String get onbCreateTitle => _t('Kendi Aktiviteni Oluştur', 'Create Your Own Activity');
+  String get onbCreateDesc => _t('Birkaç dakikada bir aktivite oluştur, harita ile konum seç, resim ekle.', 'Create an activity in minutes, pick a location on the map, add a photo.');
+  String get onbPermsTitle => _t('Konum ve Bildirim İzinleri', 'Location & Notification Permissions');
+  String get onbPermsDesc => _t('Yakınındaki aktiviteleri göstermek için konumuna, etkinlik güncellemeleri için bildirim iznine ihtiyacımız var. Bir sonraki adımda sorulacak.', 'We need your location to show nearby activities and notification permission for activity updates. You will be asked in the next step.');
+  String get skipLabel => _t('Atla', 'Skip');
+
+  // ── Map / Create ──
+  String get placeNotFound => _t('Yer bulunamadı', 'Place not found');
+  String get locationPermissionDeniedForever => _t('Konum izni kalıcı olarak reddedildi', 'Location permission permanently denied');
+  String get pickLocationTitle => _t('Konum Seç', 'Pick Location');
+  String get pickLocationSelect => _t('Seç', 'Select');
+  String get searchPlaceHint => _t('Yer ara (örn: Kadıköy)', 'Search place (e.g. Kadıköy)');
+  String get searchError => _t('Arama hatası', 'Search error');
+  String get locationFetchFailed => _t('Konum alınamadı', 'Could not get location');
+  String get titleRequired => _t('Başlık gerekli', 'Title is required');
+  String get pleasePickLocation => _t('Lütfen haritadan konum seçin', 'Please pick a location on the map');
+  String get categoryLockedHelper => _t('Katılımcı olduğu için kategori değiştirilemez', 'Category cannot be changed because there are participants');
+  String get optionalImageHint => _t('Seçmezsen kategori resmi kullanılır', "If not picked, the category image will be used");
+  String get update => _t('Güncelle', 'Update');
+
+  // ── Change summary words (for notification) ──
+  String get changeTitle => _t('başlık', 'title');
+  String get changeDescription => _t('açıklama', 'description');
+  String get changeLocationName => _t('konum adı', 'location name');
+  String get changeMaxParticipants => _t('katılımcı sayısı', 'max participants');
+  String get changeDateTime => _t('tarih/saat', 'date/time');
+  String get changeLocation => _t('konum', 'location');
+  String get changeImage => _t('resim', 'image');
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
