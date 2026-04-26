@@ -462,12 +462,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteAccount() async {
     if (mounted) setState(() => _deletingAccount = true);
     try {
+      final postDelete = await http
+          .post(Uri.parse('$_apiBase/api/users/me/delete'), headers: await _authHeaders(forceRefresh: true))
+          .timeout(const Duration(seconds: 15));
+
+      if (postDelete.statusCode == 204) {
+        await Supabase.instance.client.auth.signOut();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_tr(context, 'Hesabınız silindi.', 'Your account has been deleted.'))),
+        );
+        return;
+      }
+
       final response = await http
           .delete(Uri.parse('$_apiBase/api/users/me'), headers: await _authHeaders(forceRefresh: true))
           .timeout(const Duration(seconds: 15));
-      if (response.statusCode == 401) {
+
+      if (response.statusCode == 401 || postDelete.statusCode == 401) {
         final retry = await http
-            .delete(Uri.parse('$_apiBase/api/users/me'), headers: await _authHeaders(forceRefresh: true))
+            .post(Uri.parse('$_apiBase/api/users/me/delete'), headers: await _authHeaders(forceRefresh: true))
             .timeout(const Duration(seconds: 15));
         if (retry.statusCode == 204) {
           await Supabase.instance.client.auth.signOut();
@@ -480,7 +494,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         throw Exception('401 (${retry.body})');
       }
       if (response.statusCode != 204) {
-        throw Exception('Silme başarısız (${response.statusCode}) ${response.body}');
+        throw Exception('Silme başarısız (POST ${postDelete.statusCode} ${postDelete.body}) (DELETE ${response.statusCode} ${response.body})');
       }
 
       await Supabase.instance.client.auth.signOut();
