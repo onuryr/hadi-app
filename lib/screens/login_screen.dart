@@ -240,11 +240,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _buildLanguagePill(),
-            ),
             SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -346,6 +341,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _buildLanguagePill(),
+            ),
           ],
         ),
       ),
