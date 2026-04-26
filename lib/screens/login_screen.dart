@@ -159,55 +159,79 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  String _localeLabel(AppLocaleMode mode) => switch (mode) {
-        AppLocaleMode.system => 'AUTO',
-        AppLocaleMode.tr => 'TR',
-        AppLocaleMode.en => 'EN',
+  String _localeLabel(AppLocaleMode mode, AppLocalizations l) => switch (mode) {
+        AppLocaleMode.system => l.systemTheme,
+        AppLocaleMode.tr => 'Türkçe',
+        AppLocaleMode.en => 'English',
       };
+
+  Future<void> _openLanguageMenu(BuildContext anchorContext) async {
+    final l = AppLocalizations.of(anchorContext);
+    final overlay = Overlay.of(anchorContext).context.findRenderObject() as RenderBox;
+    final button = anchorContext.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset(0, button.size.height), ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+      ),
+      Offset.zero & overlay.size,
+    );
+    final picked = await showMenu<AppLocaleMode>(
+      context: anchorContext,
+      position: position,
+      items: [
+        CheckedPopupMenuItem(
+          value: AppLocaleMode.system,
+          checked: localeNotifier.mode == AppLocaleMode.system,
+          child: Text(l.systemTheme),
+        ),
+        CheckedPopupMenuItem(
+          value: AppLocaleMode.tr,
+          checked: localeNotifier.mode == AppLocaleMode.tr,
+          child: const Text('Türkçe'),
+        ),
+        CheckedPopupMenuItem(
+          value: AppLocaleMode.en,
+          checked: localeNotifier.mode == AppLocaleMode.en,
+          child: const Text('English'),
+        ),
+      ],
+    );
+    if (picked != null) {
+      await localeNotifier.setMode(picked);
+    }
+  }
 
   Widget _buildLanguagePill() {
     return ListenableBuilder(
       listenable: localeNotifier,
       builder: (context, _) {
         final l = AppLocalizations.of(context);
-        return PopupMenuButton<AppLocaleMode>(
-          tooltip: l.language,
-          onSelected: (mode) => localeNotifier.setMode(mode),
-          position: PopupMenuPosition.under,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade400),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.language, size: 16),
-                const SizedBox(width: 6),
-                Text(_localeLabel(localeNotifier.mode),
-                    style: const TextStyle(fontWeight: FontWeight.w500)),
-                const Icon(Icons.arrow_drop_down, size: 18),
-              ],
+        return Builder(
+          builder: (btnContext) => Material(
+            color: Theme.of(context).colorScheme.surface,
+            elevation: 1,
+            borderRadius: BorderRadius.circular(24),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () => _openLanguageMenu(btnContext),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.translate, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${l.language}: ${_localeLabel(localeNotifier.mode, l)}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const Icon(Icons.arrow_drop_down, size: 20),
+                  ],
+                ),
+              ),
             ),
           ),
-          itemBuilder: (_) => [
-            CheckedPopupMenuItem(
-              value: AppLocaleMode.system,
-              checked: localeNotifier.mode == AppLocaleMode.system,
-              child: Text(AppLocalizations.of(context).systemTheme),
-            ),
-            CheckedPopupMenuItem(
-              value: AppLocaleMode.tr,
-              checked: localeNotifier.mode == AppLocaleMode.tr,
-              child: const Text('Türkçe'),
-            ),
-            CheckedPopupMenuItem(
-              value: AppLocaleMode.en,
-              checked: localeNotifier.mode == AppLocaleMode.en,
-              child: const Text('English'),
-            ),
-          ],
         );
       },
     );
