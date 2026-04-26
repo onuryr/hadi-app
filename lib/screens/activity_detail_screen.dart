@@ -177,9 +177,10 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           .update({'status': 'inactive'}).eq('id', activityId);
       if (mounted) {
         final l = AppLocalizations.of(context);
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
           SnackBar(
             content: Text(l.activityCancelled),
             duration: const Duration(seconds: 3),
@@ -229,9 +230,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           .eq('activity_id', activityId);
       await _supabase.from('activities').delete().eq('id', activityId);
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
+        final text = AppLocalizations.of(context).activityDeleted;
         Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).activityDeleted)),
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(content: Text(text), duration: const Duration(seconds: 3)),
         );
       }
     } catch (e) {
