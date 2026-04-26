@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
+import '../services/locale_service.dart';
 import '../services/notification_service.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
@@ -158,17 +159,79 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  String _localeLabel(AppLocaleMode mode) => switch (mode) {
+        AppLocaleMode.system => 'AUTO',
+        AppLocaleMode.tr => 'TR',
+        AppLocaleMode.en => 'EN',
+      };
+
+  Widget _buildLanguagePill() {
+    return ListenableBuilder(
+      listenable: localeNotifier,
+      builder: (context, _) {
+        final l = AppLocalizations.of(context);
+        return PopupMenuButton<AppLocaleMode>(
+          tooltip: l.language,
+          onSelected: (mode) => localeNotifier.setMode(mode),
+          position: PopupMenuPosition.under,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.language, size: 16),
+                const SizedBox(width: 6),
+                Text(_localeLabel(localeNotifier.mode),
+                    style: const TextStyle(fontWeight: FontWeight.w500)),
+                const Icon(Icons.arrow_drop_down, size: 18),
+              ],
+            ),
+          ),
+          itemBuilder: (_) => [
+            CheckedPopupMenuItem(
+              value: AppLocaleMode.system,
+              checked: localeNotifier.mode == AppLocaleMode.system,
+              child: Text(AppLocalizations.of(context).systemTheme),
+            ),
+            CheckedPopupMenuItem(
+              value: AppLocaleMode.tr,
+              checked: localeNotifier.mode == AppLocaleMode.tr,
+              child: const Text('Türkçe'),
+            ),
+            CheckedPopupMenuItem(
+              value: AppLocaleMode.en,
+              checked: localeNotifier.mode == AppLocaleMode.en,
+              child: const Text('English'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _buildLanguagePill(),
+            ),
+            SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SizedBox(height: 40),
               const Text(
                 'Hadi',
                 style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
@@ -262,6 +325,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
             ],
           ),
+        ),
+          ],
         ),
       ),
     );
