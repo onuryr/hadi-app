@@ -25,8 +25,8 @@ class ParticipantService {
           body: jsonEncode({'status': status}),
         )
         .timeout(const Duration(seconds: 10));
-    if (resp.statusCode != 200) {
-      throw Exception('İşlem başarısız (${resp.statusCode})');
+    if (resp.statusCode != 200 && resp.statusCode != 204) {
+      throw Exception('HTTP ${resp.statusCode}');
     }
   }
 }
