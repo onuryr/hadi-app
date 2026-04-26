@@ -379,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     content: Text(listType == 'favorite'
                         ? l.removeFromFavorites
                         : l.activityCancelled),
-                    duration: const Duration(seconds: 4),
+                    duration: const Duration(seconds: 3),
                     action: SnackBarAction(
                       label: l.undo,
                       onPressed: () async {
