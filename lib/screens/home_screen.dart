@@ -563,53 +563,76 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          SizedBox(
-            height: 52,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                Expanded(
                   child: ActionChip(
-                    avatar: const Icon(Icons.my_location, size: 16),
-                    label: Text('$_radiusKm km'),
+                    avatar: const Icon(Icons.category_outlined, size: 16),
+                    label: Text(
+                      _selectedCategoryId == null
+                          ? l.categoryLabel
+                          : (_categories.firstWhere(
+                                (c) => c['id'] == _selectedCategoryId,
+                                orElse: () => {'name': l.categoryLabel},
+                              )['name']
+                              as String),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     onPressed: () async {
-                      final selected = await showModalBottomSheet<int>(
+                      final selected = await showModalBottomSheet<int?>(
                         context: context,
                         builder: (ctx) => SafeArea(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                          child: ListView(
+                            shrinkWrap: true,
                             children: [
                               Padding(
                                 padding: const EdgeInsets.all(16),
-                                child: Text(l.searchRadius,
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                child: Text(l.categoryLabel,
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
-                              ..._radiusOptions.map((r) => ListTile(
-                                    title: Text('$r km'),
-                                    trailing: r == _radiusKm
-                                        ? const Icon(Icons.check, color: Colors.deepPurple)
-                                        : null,
-                                    onTap: () => Navigator.of(ctx).pop(r),
-                                  )),
+                              ListTile(
+                                leading: const Text('🌐', style: TextStyle(fontSize: 20)),
+                                title: Text(l.all),
+                                trailing: _selectedCategoryId == null
+                                    ? const Icon(Icons.check, color: Colors.deepPurple)
+                                    : null,
+                                onTap: () => Navigator.of(ctx).pop(-1),
+                              ),
+                              ..._categories.map((c) {
+                                final id = c['id'] as int;
+                                return ListTile(
+                                  leading: Text(c['icon'] as String,
+                                      style: const TextStyle(fontSize: 20)),
+                                  title: Text(c['name'] as String),
+                                  trailing: _selectedCategoryId == id
+                                      ? const Icon(Icons.check, color: Colors.deepPurple)
+                                      : null,
+                                  onTap: () => Navigator.of(ctx).pop(id),
+                                );
+                              }),
                             ],
                           ),
                         ),
                       );
-                      if (selected != null && selected != _radiusKm) {
-                        setState(() => _radiusKm = selected);
-                        _savePref('home_radius_km', selected);
-                        _loadActivities();
+                      if (selected != null) {
+                        final newId = selected == -1 ? null : selected;
+                        if (newId != _selectedCategoryId) {
+                          setState(() => _selectedCategoryId = newId);
+                          _loadActivities();
+                        }
                       }
                     },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                const SizedBox(width: 8),
+                Expanded(
                   child: ActionChip(
                     avatar: const Icon(Icons.sort, size: 16),
-                    label: Text(sortOpts[_sortBy] ?? l.sort),
+                    label: Text(sortOpts[_sortBy] ?? l.sort,
+                        overflow: TextOverflow.ellipsis),
                     onPressed: () async {
                       final selected = await showModalBottomSheet<String>(
                         context: context,
@@ -620,7 +643,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: Text(l.sort,
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                               ...sortOpts.entries.map((e) => ListTile(
                                     title: Text(e.value),
@@ -641,31 +665,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(l.all),
-                    selected: _selectedCategoryId == null,
-                    onSelected: (_) {
-                      setState(() => _selectedCategoryId = null);
-                      _loadActivities();
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ActionChip(
+                    avatar: const Icon(Icons.my_location, size: 16),
+                    label: Text('$_radiusKm km',
+                        overflow: TextOverflow.ellipsis),
+                    onPressed: () async {
+                      final selected = await showModalBottomSheet<int>(
+                        context: context,
+                        builder: (ctx) => SafeArea(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(l.searchRadius,
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.bold)),
+                              ),
+                              ..._radiusOptions.map((r) => ListTile(
+                                    title: Text('$r km'),
+                                    trailing: r == _radiusKm
+                                        ? const Icon(Icons.check, color: Colors.deepPurple)
+                                        : null,
+                                    onTap: () => Navigator.of(ctx).pop(r),
+                                  )),
+                            ],
+                          ),
+                        ),
+                      );
+                      if (selected != null && selected != _radiusKm) {
+                        setState(() => _radiusKm = selected);
+                        _savePref('home_radius_km', selected);
+                        _loadActivities();
+                      }
                     },
                   ),
                 ),
-                ..._categories.map((c) {
-                  final id = c['id'] as int;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text('${c['icon']} ${c['name']}'),
-                      selected: _selectedCategoryId == id,
-                      onSelected: (_) {
-                        setState(() => _selectedCategoryId = id);
-                        _loadActivities();
-                      },
-                    ),
-                  );
-                }),
               ],
             ),
           ),

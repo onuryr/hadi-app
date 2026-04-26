@@ -305,6 +305,32 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
               validator: (v) => v!.isEmpty ? l.titleRequired : null,
             ),
             const SizedBox(height: 16),
+            DropdownButtonFormField<int>(
+              value: _selectedCategory,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: l.categoryLabel,
+                hintText: l.categoryHint,
+                border: const OutlineInputBorder(),
+                helperText: widget.lockCategory ? l.categoryLockedHelper : null,
+                suffixIcon: widget.lockCategory ? const Icon(Icons.lock, size: 18) : null,
+              ),
+              items: categories.map((c) {
+                return DropdownMenuItem<int>(
+                  value: c['id'] as int,
+                  child: Row(
+                    children: [
+                      Text(c['icon'] as String, style: const TextStyle(fontSize: 18)),
+                      const SizedBox(width: 12),
+                      Text(c['name'] as String),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: widget.lockCategory ? null : (v) => setState(() => _selectedCategory = v),
+              validator: (v) => v == null ? l.categoryRequired : null,
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _locationNameController,
               decoration: InputDecoration(
@@ -343,32 +369,6 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 border: const OutlineInputBorder(),
               ),
               maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<int>(
-              value: _selectedCategory,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: l.categoryLabel,
-                hintText: l.categoryHint,
-                border: const OutlineInputBorder(),
-                helperText: widget.lockCategory ? l.categoryLockedHelper : null,
-                suffixIcon: widget.lockCategory ? const Icon(Icons.lock, size: 18) : null,
-              ),
-              items: categories.map((c) {
-                return DropdownMenuItem<int>(
-                  value: c['id'] as int,
-                  child: Row(
-                    children: [
-                      Text(c['icon'] as String, style: const TextStyle(fontSize: 18)),
-                      const SizedBox(width: 12),
-                      Text(c['name'] as String),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: widget.lockCategory ? null : (v) => setState(() => _selectedCategory = v),
-              validator: (v) => v == null ? l.categoryRequired : null,
             ),
             const SizedBox(height: 16),
             ListTile(
