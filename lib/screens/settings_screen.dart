@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_localizations.dart';
 import '../services/locale_service.dart';
 import '../services/theme_service.dart';
 
@@ -41,7 +42,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Timer? _debounce;
 
-  Future<Map<String, String>> _authHeaders({bool forceRefresh = false}) async {
+  Future<Map<String, String>> _authHeaders({
+    bool forceRefresh = false,
+    bool requireAuth = true,
+  }) async {
     final auth = Supabase.instance.client.auth;
     var token = auth.currentSession?.accessToken;
     if (forceRefresh || token == null) {
@@ -52,6 +56,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         token = auth.currentSession?.accessToken;
       }
     }
+    if (requireAuth && (token == null || token.isEmpty)) {
+      // ignore: use_build_context_synchronously
+      final msg = mounted ? AppLocalizations.of(context).sessionError : 'Session expired';
+      throw Exception(msg);
+    }
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -59,16 +68,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     };
   }
 
-  bool _isEnglish(BuildContext context) {
-    final mode = localeNotifier.mode;
-    if (mode == AppLocaleMode.en) return true;
-    if (mode == AppLocaleMode.tr) return false;
-    return Localizations.localeOf(context).languageCode.toLowerCase().startsWith('en');
+  String _extractErrorMessage(http.Response response) {
+    final raw = response.body.trim();
+    if (raw.isEmpty) return response.reasonPhrase ?? 'No response body';
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        final error = decoded['error']?.toString();
+        final message = decoded['message']?.toString();
+        final detail = decoded['detail']?.toString();
+        final combined = [error, message, detail]
+            .whereType<String>()
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+        if (combined.isNotEmpty) return combined.join(' | ');
+      }
+    } catch (_) {
+      // Body is not JSON, return raw text.
+    }
+    return raw;
   }
 
-  String _tr(BuildContext context, String tr, String en) {
-    return _isEnglish(context) ? en : tr;
-  }
 
   @override
   void initState() {
@@ -179,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _activityReminders = _savedActivityReminders;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_tr(context, 'Tercihler kaydedilemedi. Tekrar deneyin.', 'Preferences could not be saved. Please try again.'))),
+          SnackBar(content: Text(AppLocalizations.of(context).preferencesSaveFailed)),
         );
       }
     } finally {
@@ -297,10 +318,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     await showDialog<void>(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Şifreyi Değiştir'),
+      builder: (ctx) => StatefulBuilder(
+          builder: (ctx2, setDialogState) {
+            final l2 = AppLocalizations.of(ctx2);
+            return AlertDialog(
+            title: Text(l2.changePassword),
             content: Form(
               key: _passwordFormKey,
               child: SingleChildScrollView(
@@ -311,28 +333,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       controller: _currentPasswordController,
                       obscureText: obscureCurrent,
                       decoration: InputDecoration(
-                        labelText: _tr(context, 'Mevcut şifre', 'Current password'),
+                        labelText: l2.currentPassword,
                         suffixIcon: IconButton(
                           onPressed: () => setDialogState(() => obscureCurrent = !obscureCurrent),
                           icon: Icon(obscureCurrent ? Icons.visibility_off : Icons.visibility),
                         ),
                       ),
-                      validator: (v) => (v == null || v.isEmpty) ? _tr(context, 'Mevcut şifre gerekli', 'Current password is required') : null,
+                      validator: (v) => (v == null || v.isEmpty) ? l2.currentPasswordRequired : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _newPasswordController,
                       obscureText: obscureNew,
                       decoration: InputDecoration(
-                        labelText: _tr(context, 'Yeni şifre', 'New password'),
+                        labelText: l2.newPassword,
                         suffixIcon: IconButton(
                           onPressed: () => setDialogState(() => obscureNew = !obscureNew),
                           icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return _tr(context, 'Yeni şifre gerekli', 'New password is required');
-                        if (v.length < 6) return _tr(context, 'En az 6 karakter olmalı', 'Must be at least 6 characters');
+                        if (v == null || v.isEmpty) return l2.newPasswordRequired;
+                        if (v.length < 6) return l2.passwordMinLength;
                         return null;
                       },
                     ),
@@ -341,15 +363,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       controller: _confirmPasswordController,
                       obscureText: obscureConfirm,
                       decoration: InputDecoration(
-                        labelText: _tr(context, 'Yeni şifre (tekrar)', 'Confirm new password'),
+                        labelText: l2.confirmNewPassword,
                         suffixIcon: IconButton(
                           onPressed: () => setDialogState(() => obscureConfirm = !obscureConfirm),
                           icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return _tr(context, 'Tekrar şifre gerekli', 'Password confirmation is required');
-                        if (v != _newPasswordController.text) return _tr(context, 'Şifreler eşleşmiyor', 'Passwords do not match');
+                        if (v == null || v.isEmpty) return l2.confirmPasswordRequired;
+                        if (v != _newPasswordController.text) return l2.passwordMismatch;
                         return null;
                       },
                     ),
@@ -359,8 +381,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: _changingPassword ? null : () => Navigator.of(context).pop(),
-                child: Text(_tr(context, 'İptal', 'Cancel')),
+                onPressed: _changingPassword ? null : () => Navigator.of(ctx2).pop(),
+                child: Text(l2.cancel),
               ),
               FilledButton(
                 onPressed: _changingPassword
@@ -371,8 +393,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           currentPassword: _currentPasswordController.text.trim(),
                           newPassword: _newPasswordController.text.trim(),
                         );
-                        if (!context.mounted) return;
-                        Navigator.of(context).pop();
+                        if (!ctx2.mounted) return;
+                        Navigator.of(ctx2).pop();
                       },
                 child: _changingPassword
                     ? const SizedBox(
@@ -380,12 +402,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(_tr(context, 'Kaydet', 'Save')),
+                    : Text(l2.save),
               ),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -393,30 +415,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final isEn = _isEnglish(context);
-    String t(String tr, String en) => isEn ? en : tr;
     if (mounted) setState(() => _changingPassword = true);
     try {
+      final l = AppLocalizations.of(context);
       final user = Supabase.instance.client.auth.currentUser;
       final email = user?.email;
-      if (email == null) {
-        throw Exception(t('Oturum bilgisi bulunamadı.', 'Session information not found.'));
-      }
+      if (email == null) throw Exception(l.sessionNotFound);
 
       final verifyResponse = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: currentPassword,
       );
-      if (verifyResponse.user == null) {
-        throw Exception(t('Mevcut şifre doğrulanamadı.', 'Current password could not be verified.'));
-      }
+      if (verifyResponse.user == null) throw Exception(l.currentPasswordInvalid);
 
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(password: newPassword),
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Şifreniz güncellendi.')),
+        SnackBar(content: Text(AppLocalizations.of(context).passwordUpdated)),
       );
     } on AuthException catch (e) {
       if (!mounted) return;
@@ -426,7 +443,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_tr(context, 'Şifre değiştirilemedi', 'Password could not be changed')}: $e')),
+        SnackBar(content: Text('${AppLocalizations.of(context).passwordChangeFailed}: $e')),
       );
     } finally {
       if (mounted) setState(() => _changingPassword = false);
@@ -436,23 +453,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _confirmDeleteAccount() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_tr(context, 'Hesabı Sil', 'Delete Account')),
-        content: Text(
-          _tr(context, 'Bu işlem geri alınamaz. Tüm verileriniz kalıcı olarak silinecek.', 'This action cannot be undone. All your data will be permanently deleted.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _deletingAccount ? null : () => Navigator.of(context).pop(false),
-            child: Text(_tr(context, 'İptal', 'Cancel')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: _deletingAccount ? null : () => Navigator.of(context).pop(true),
-            child: Text(_tr(context, 'Sil', 'Delete')),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final l = AppLocalizations.of(ctx);
+        return AlertDialog(
+          title: Text(l.deleteAccount),
+          content: Text(l.deleteAccountConfirm),
+          actions: [
+            TextButton(
+              onPressed: _deletingAccount ? null : () => Navigator.of(ctx).pop(false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: _deletingAccount ? null : () => Navigator.of(ctx).pop(true),
+              child: Text(l.delete),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirmed != true) return;
@@ -462,50 +480,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _deleteAccount() async {
     if (mounted) setState(() => _deletingAccount = true);
     try {
-      final postDelete = await http
-          .post(Uri.parse('$_apiBase/api/users/me/delete'), headers: await _authHeaders(forceRefresh: true))
-          .timeout(const Duration(seconds: 15));
-
-      if (postDelete.statusCode == 204) {
-        await Supabase.instance.client.auth.signOut();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_tr(context, 'Hesabınız silindi.', 'Your account has been deleted.'))),
-        );
-        return;
-      }
-
+      final headers = await _authHeaders(forceRefresh: true, requireAuth: true);
       final response = await http
-          .delete(Uri.parse('$_apiBase/api/users/me'), headers: await _authHeaders(forceRefresh: true))
+          .post(Uri.parse('$_apiBase/api/users/me/delete'), headers: headers)
           .timeout(const Duration(seconds: 15));
 
-      if (response.statusCode == 401 || postDelete.statusCode == 401) {
-        final retry = await http
-            .post(Uri.parse('$_apiBase/api/users/me/delete'), headers: await _authHeaders(forceRefresh: true))
-            .timeout(const Duration(seconds: 15));
-        if (retry.statusCode == 204) {
-          await Supabase.instance.client.auth.signOut();
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_tr(context, 'Hesabınız silindi.', 'Your account has been deleted.'))),
-          );
-          return;
-        }
-        throw Exception('401 (${retry.body})');
-      }
       if (response.statusCode != 204) {
-        throw Exception('Silme başarısız (POST ${postDelete.statusCode} ${postDelete.body}) (DELETE ${response.statusCode} ${response.body})');
+        final hasAuthHeader = headers['Authorization']?.isNotEmpty == true;
+        final error = _extractErrorMessage(response);
+        throw Exception(
+          'HTTP ${response.statusCode} (authHeader: $hasAuthHeader) - $error',
+        );
       }
 
       await Supabase.instance.client.auth.signOut();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr(context, 'Hesabınız silindi.', 'Your account has been deleted.'))),
+        SnackBar(content: Text(AppLocalizations.of(context).accountDeleted)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_tr(context, 'Hesap silinemedi', 'Account could not be deleted')}: $e')),
+        SnackBar(content: Text('${AppLocalizations.of(context).accountDeleteFailed}: $e')),
       );
     } finally {
       if (mounted) setState(() => _deletingAccount = false);
@@ -514,139 +510,138 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(_tr(context, 'Ayarlar', 'Settings'))),
+      appBar: AppBar(title: Text(l.settings)),
       body: ListenableBuilder(
         listenable: themeNotifier,
-        builder: (context, _) => ListView(
-          children: [
-            _SectionHeader(title: _tr(context, 'Bildirimler', 'Notifications')),
-            if (_loadingPrefs)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else ...[
-              SwitchListTile(
-                secondary: const Icon(Icons.notifications_outlined),
-                title: Text(_tr(context, 'Aktivite güncellemeleri', 'Activity updates')),
-                value: _activityUpdates,
-                onChanged: _savingPrefs ? null : (v) => _onToggle('activityUpdates', v),
-              ),
-              SwitchListTile(
-                secondary: const Icon(Icons.message_outlined),
-                title: Text(_tr(context, 'Yeni mesajlar', 'New messages')),
-                value: _newMessages,
-                onChanged: _savingPrefs ? null : (v) => _onToggle('newMessages', v),
-              ),
-              SwitchListTile(
-                secondary: const Icon(Icons.alarm_outlined),
-                title: Text(_tr(context, 'Aktivite hatırlatıcıları', 'Activity reminders')),
-                value: _activityReminders,
-                onChanged: _savingPrefs ? null : (v) => _onToggle('activityReminders', v),
-              ),
-              if (_savingPrefs)
-                ListTile(
-                  leading: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  title: Text(_tr(context, 'Bildirim tercihleri kaydediliyor...', 'Saving notification preferences...')),
+        builder: (context, _) {
+          final l2 = AppLocalizations.of(context);
+          return ListView(
+            children: [
+              _SectionHeader(title: l2.notifications),
+              if (_loadingPrefs)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                SwitchListTile(
+                  secondary: const Icon(Icons.notifications_outlined),
+                  title: Text(l2.activityUpdates),
+                  value: _activityUpdates,
+                  onChanged: _savingPrefs ? null : (v) => _onToggle('activityUpdates', v),
                 ),
-            ],
-            const Divider(),
-            _SectionHeader(title: _tr(context, 'Görünüm', 'Appearance')),
-            ListTile(
-              leading: Icon(Icons.palette_outlined),
-              title: Text(_tr(context, 'Tema', 'Theme')),
-              subtitle: Text(_tr(context, 'Uygulama görünümünü seç', 'Choose app appearance')),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: SegmentedButton<ThemeMode>(
-                segments: [
-                  ButtonSegment(
-                    value: ThemeMode.system,
-                    label: Text(_tr(context, 'Sistem', 'System')),
-                    icon: Icon(Icons.brightness_auto),
+                SwitchListTile(
+                  secondary: const Icon(Icons.message_outlined),
+                  title: Text(l2.newMessages),
+                  value: _newMessages,
+                  onChanged: _savingPrefs ? null : (v) => _onToggle('newMessages', v),
+                ),
+                SwitchListTile(
+                  secondary: const Icon(Icons.alarm_outlined),
+                  title: Text(l2.activityReminders),
+                  value: _activityReminders,
+                  onChanged: _savingPrefs ? null : (v) => _onToggle('activityReminders', v),
+                ),
+                if (_savingPrefs)
+                  ListTile(
+                    leading: const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    title: Text(l2.savingPreferences),
                   ),
-                  ButtonSegment(
-                    value: ThemeMode.light,
-                    label: Text(_tr(context, 'Açık', 'Light')),
-                    icon: Icon(Icons.light_mode),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.dark,
-                    label: Text(_tr(context, 'Koyu', 'Dark')),
-                    icon: Icon(Icons.dark_mode),
-                  ),
-                ],
-                selected: {themeNotifier.mode},
-                onSelectionChanged: (modes) => themeNotifier.setMode(modes.first),
+              ],
+              const Divider(),
+              _SectionHeader(title: l2.appearance),
+              ListTile(
+                leading: const Icon(Icons.palette_outlined),
+                title: Text(l2.theme),
+                subtitle: Text(l2.themeSubtitle),
               ),
-            ),
-            const Divider(),
-            _SectionHeader(title: _tr(context, 'Dil', 'Language')),
-            ListenableBuilder(
-              listenable: localeNotifier,
-              builder: (context, _) => Padding(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: SegmentedButton<ThemeMode>(
+                  segments: [
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      label: Text(l2.systemTheme),
+                      icon: const Icon(Icons.brightness_auto),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      label: Text(l2.lightTheme),
+                      icon: const Icon(Icons.light_mode),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      label: Text(l2.darkTheme),
+                      icon: const Icon(Icons.dark_mode),
+                    ),
+                  ],
+                  selected: {themeNotifier.mode},
+                  onSelectionChanged: (modes) => themeNotifier.setMode(modes.first),
+                ),
+              ),
+              const Divider(),
+              _SectionHeader(title: l2.language),
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: SegmentedButton<AppLocaleMode>(
                   segments: [
                     ButtonSegment(
                       value: AppLocaleMode.system,
-                      label: Text(_tr(context, 'Sistem', 'System')),
-                      icon: Icon(Icons.smartphone),
+                      label: Text(l2.systemTheme),
+                      icon: const Icon(Icons.smartphone),
                     ),
-                    ButtonSegment(
+                    const ButtonSegment(
                       value: AppLocaleMode.tr,
                       label: Text('Türkçe'),
                       icon: Icon(Icons.language),
                     ),
-                    ButtonSegment(
+                    const ButtonSegment(
                       value: AppLocaleMode.en,
                       label: Text('English'),
                       icon: Icon(Icons.translate),
                     ),
                   ],
                   selected: {localeNotifier.mode},
-                  onSelectionChanged: (selection) {
-                    localeNotifier.setMode(selection.first);
-                  },
+                  onSelectionChanged: (selection) => localeNotifier.setMode(selection.first),
                 ),
               ),
-            ),
-            const Divider(),
-            _SectionHeader(title: _tr(context, 'Hesap', 'Account')),
-            ListTile(
-              leading: Icon(Icons.lock_outline),
-              title: Text(_tr(context, 'Şifreyi Değiştir', 'Change Password')),
-              trailing: _changingPassword
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.chevron_right),
-              onTap: _changingPassword ? null : _showChangePasswordDialog,
-            ),
-            ListTile(
-              leading: Icon(Icons.delete_outline),
-              title: Text(_tr(context, 'Hesabı Sil', 'Delete Account')),
-              trailing: _deletingAccount
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.chevron_right),
-              textColor: Theme.of(context).colorScheme.error,
-              iconColor: Theme.of(context).colorScheme.error,
-              onTap: _deletingAccount ? null : _confirmDeleteAccount,
-            ),
-          ],
-        ),
+              const Divider(),
+              _SectionHeader(title: l2.account),
+              ListTile(
+                leading: const Icon(Icons.lock_outline),
+                title: Text(l2.changePassword),
+                trailing: _changingPassword
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chevron_right),
+                onTap: _changingPassword ? null : _showChangePasswordDialog,
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: Text(l2.deleteAccount),
+                trailing: _deletingAccount
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chevron_right),
+                textColor: Theme.of(context).colorScheme.error,
+                iconColor: Theme.of(context).colorScheme.error,
+                onTap: _deletingAccount ? null : _confirmDeleteAccount,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../l10n/app_localizations.dart';
 import '../services/deep_link_service.dart';
 import '../services/rating_service.dart';
 import '../services/report_block_service.dart';
@@ -127,7 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       setState(() => _loading = false);
       if (showError && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Yenilenirken bir hata oluştu.')),
+          SnackBar(content: Text(AppLocalizations.of(context).refreshError)),
         );
       }
     }
@@ -147,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil güncellendi')),
+          SnackBar(content: Text(AppLocalizations.of(context).profileSaved)),
         );
       }
     } catch (e) {
@@ -229,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: const Center(child: Text('Henüz aktivite yok')),
+                  child: Center(child: Text(AppLocalizations.of(context).noActivitiesCreated)),
             ),
           ),
         ),
@@ -268,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       color: Theme.of(context).colorScheme.errorContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text('İptal Edildi',
+                    child: Text(AppLocalizations.of(context).activityCancelled,
                         style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onErrorContainer)),
                   )
                 : past
@@ -278,7 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text('Tamamlandı',
+                        child: Text(AppLocalizations.of(context).activityPast,
                             style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       )
                     : const Icon(Icons.chevron_right),
@@ -294,9 +295,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isSelf ? 'Profilim' : (_user?['display_name'] ?? 'Profil')),
+        title: Text(_isSelf ? l.profile : (_user?['display_name'] ?? l.profile)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_isSelf && !_loading)
@@ -305,11 +307,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     onPressed: _saving ? null : _saveProfile,
                     child: _saving
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+                        : Text(l.save, style: const TextStyle(fontWeight: FontWeight.bold)),
                   )
                 : IconButton(
                     icon: const Icon(Icons.edit),
-                    tooltip: 'Düzenle',
+                    tooltip: l.edit,
                     onPressed: () => setState(() => _editMode = true),
                   ),
           if (_isSelf && !_loading)
@@ -325,9 +327,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   );
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'settings', child: Text('Ayarlar')),
-                PopupMenuItem(value: 'blocked', child: Text('Engellediklerim')),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'settings', child: Text(l.settings)),
+                PopupMenuItem(value: 'blocked', child: Text(l.blockedUsers)),
               ],
             ),
           if (!_isSelf && !_loading)
@@ -344,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   if (ok) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Raporunuz iletildi')),
+                      SnackBar(content: Text(AppLocalizations.of(context).report)),
                     );
                   }
                 } else if (value == 'block') {
@@ -359,9 +361,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   }
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'report', child: Text('Raporla')),
-                PopupMenuItem(value: 'block', child: Text('Engelle')),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'report', child: Text(l.report)),
+                PopupMenuItem(value: 'block', child: Text(l.block)),
               ],
             ),
         ],
@@ -468,10 +470,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   controller: _tabController,
                   isScrollable: true,
                   tabs: [
-                    Tab(text: '${_isSelf ? 'Oluşturduklarım' : 'Oluşturdukları'} (${_createdActivities.length})'),
-                    Tab(text: '${_isSelf ? 'Katıldıklarım' : 'Katıldıkları'} (${_joinedActivities.length})'),
+                    Tab(text: '${l.createdActivities} (${_createdActivities.length})'),
+                    Tab(text: '${l.joinedActivities} (${_joinedActivities.length})'),
                     if (_isSelf)
-                      Tab(text: 'Favoriler (${_favoriteActivities.length})'),
+                      Tab(text: '${l.favorites} (${_favoriteActivities.length})'),
                   ],
                 ),
                 Expanded(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'login_screen.dart';
@@ -12,6 +13,7 @@ import 'activity_detail_screen.dart';
 import 'profile_screen.dart';
 import 'inbox_screen.dart';
 import 'package:share_plus/share_plus.dart';
+import '../l10n/app_localizations.dart';
 import '../services/chat_service.dart';
 import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
@@ -39,11 +41,18 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showMap = false;
   String _searchQuery = '';
   int _radiusKm = 10;
+  String _sortBy = 'distance';
   int _unreadCount = 0;
   Set<String> _favoriteIds = {};
   Timer? _searchDebounce;
 
   static const _radiusOptions = [5, 10, 25, 50, 100];
+  Map<String, String> _sortOptions(AppLocalizations l) => {
+    'distance': l.sortDistance,
+    'date': l.sortDate,
+    'participants': l.sortParticipants,
+    'newest': l.sortNewest,
+  };
   final _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -68,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadActivities();
+    _loadPrefsAndActivities();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
               _scrollController.position.maxScrollExtent - 200 &&
@@ -78,6 +87,21 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
     _subscribeToMessages();
+  }
+
+  Future<void> _loadPrefsAndActivities() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _radiusKm = prefs.getInt('home_radius_km') ?? 10;
+      _sortBy = prefs.getString('home_sort_by') ?? 'distance';
+    });
+    _loadActivities();
+  }
+
+  Future<void> _savePref(String key, dynamic value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is int) await prefs.setInt(key, value);
+    if (value is String) await prefs.setString(key, value);
   }
 
   void _subscribeToMessages() {
@@ -147,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'lat': _cachedLat.toString(),
       'lng': _cachedLng.toString(),
       'radiusKm': _radiusKm.toString(),
+      'sortBy': _sortBy,
       'page': page.toString(),
       'pageSize': _pageSize.toString(),
       if (_selectedCategoryId != null) 'categoryId': _selectedCategoryId.toString(),
@@ -225,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Yenilenirken bir hata oluştu.')),
+          SnackBar(content: Text(AppLocalizations.of(context).refreshError)),
         );
       }
     }
@@ -316,6 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showActivitySheet(Map<String, dynamic> activity) {
+    final l = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -355,8 +381,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text('📍 ${activity['location_name'] ?? ''}'),
             Text('🕐 ${_formatDate(activity['scheduled_at'])}'),
-            Text('👥 ${activity['participant_count'] ?? 0}/${activity['max_participants'] ?? '?'} katılımcı'),
-            Text('📏 ${_formatDistance(activity['distance_km'])} uzakta'),
+                          Text('👥 ${activity['participant_count'] ?? 0}/${activity['max_participants'] ?? '?'} ${l.participants}'),
+                            Text('📏 ${_formatDistance(activity['distance_km'])} ${l.away}'),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -368,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                   if (deleted == true) _loadActivities();
                 },
-                child: const Text('Detayları Gör'),
+                child: Text(l.viewDetails),
               ),
             ),
           ],
@@ -392,6 +418,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final sortOpts = _sortOptions(l);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hadi'),
@@ -399,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(_showMap ? Icons.list : Icons.map),
-            tooltip: _showMap ? 'Liste' : 'Harita',
+            tooltip: _showMap ? l.listView : l.mapView,
             onPressed: () => setState(() => _showMap = !_showMap),
           ),
           Badge.count(
@@ -409,7 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
             offset: const Offset(-4, 4),
             child: IconButton(
               icon: const Icon(Icons.chat_bubble_outline),
-              tooltip: 'Mesajlar',
+              tooltip: l.messages,
               onPressed: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const InboxScreen()),
@@ -424,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
               MaterialPageRoute(builder: (_) => const ProfileScreen()),
             ),
           ),
-          IconButton(icon: const Icon(Icons.logout), tooltip: 'Çıkış yap', onPressed: _signOut),
+          IconButton(icon: const Icon(Icons.logout), tooltip: l.signOut, onPressed: _signOut),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -444,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _searchController,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Aktivite ara...',
+                hintText: l.searchActivities,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -484,10 +512,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Text('Arama yarıçapı',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(l.searchRadius,
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                               ..._radiusOptions.map((r) => ListTile(
                                     title: Text('$r km'),
@@ -502,6 +530,43 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                       if (selected != null && selected != _radiusKm) {
                         setState(() => _radiusKm = selected);
+                        _savePref('home_radius_km', selected);
+                        _loadActivities();
+                      }
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    avatar: const Icon(Icons.sort, size: 16),
+                    label: Text(sortOpts[_sortBy] ?? l.sort),
+                    onPressed: () async {
+                      final selected = await showModalBottomSheet<String>(
+                        context: context,
+                        builder: (ctx) => SafeArea(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(l.sort,
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              ),
+                              ...sortOpts.entries.map((e) => ListTile(
+                                    title: Text(e.value),
+                                    trailing: e.key == _sortBy
+                                        ? const Icon(Icons.check, color: Colors.deepPurple)
+                                        : null,
+                                    onTap: () => Navigator.of(ctx).pop(e.key),
+                                  )),
+                            ],
+                          ),
+                        ),
+                      );
+                      if (selected != null && selected != _sortBy) {
+                        setState(() => _sortBy = selected);
+                        _savePref('home_sort_by', selected);
                         _loadActivities();
                       }
                     },
@@ -510,7 +575,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: const Text('Tümü'),
+                    label: Text(l.all),
                     selected: _selectedCategoryId == null,
                     onSelected: (_) {
                       setState(() => _selectedCategoryId = null);
@@ -558,11 +623,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                         children: [
                                           const Icon(Icons.error_outline, size: 48, color: Colors.grey),
                                           const SizedBox(height: 8),
-                                          Text('Aktiviteler yüklenemedi', style: Theme.of(context).textTheme.titleMedium),
+                                          Text(l.activitiesLoadFailed, style: Theme.of(context).textTheme.titleMedium),
                                           const SizedBox(height: 16),
                                           ElevatedButton(
                                             onPressed: _loadActivities,
-                                            child: const Text('Tekrar Dene'),
+                                            child: Text(l.retry),
                                           ),
                                         ],
                                       ),
@@ -576,7 +641,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       physics: const AlwaysScrollableScrollPhysics(),
                                       child: ConstrainedBox(
                                         constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                                        child: const Center(child: Text('Yakında aktif aktivite bulunamadı')),
+                                        child: Center(child: Text(l.noActivitiesNearby)),
                                       ),
                                     ),
                                   )
