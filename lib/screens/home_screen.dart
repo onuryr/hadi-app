@@ -16,6 +16,7 @@ import '../services/chat_service.dart';
 import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/category_defaults.dart';
+import '../widgets/activity_card_skeleton.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -176,6 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadActivities() async {
+    final loadStart = DateTime.now();
     setState(() { _loading = true; _error = null; _page = 1; });
     try {
       final (pageResult, favs) = await (
@@ -183,6 +185,10 @@ class _HomeScreenState extends State<HomeScreen> {
         FavoritesService.getFavoriteIds(),
       ).wait;
       final (items, hasMore) = pageResult;
+      final elapsed = DateTime.now().difference(loadStart);
+      if (elapsed < const Duration(milliseconds: 300)) {
+        await Future.delayed(const Duration(milliseconds: 300) - elapsed);
+      }
       setState(() {
         _activities = items;
         _favoriteIds = favs;
@@ -192,6 +198,10 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       _refreshUnread();
     } catch (e) {
+      final elapsed = DateTime.now().difference(loadStart);
+      if (elapsed < const Duration(milliseconds: 300)) {
+        await Future.delayed(const Duration(milliseconds: 300) - elapsed);
+      }
       setState(() { _loading = false; _error = e.toString(); });
     }
   }
@@ -502,7 +512,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: 6,
+                    itemBuilder: (_, __) => const ActivityCardSkeleton(),
+                  )
                 : _showMap
                     ? _buildMapView()
           : _error != null
