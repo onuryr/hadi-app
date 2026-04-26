@@ -50,11 +50,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     var token = auth.currentSession?.accessToken;
     if (forceRefresh || token == null) {
       try {
-        final refreshed = await auth.refreshSession();
-        token = refreshed.session?.accessToken ?? auth.currentSession?.accessToken;
+        await auth.refreshSession();
       } catch (_) {
-        token = auth.currentSession?.accessToken;
+        // ignore refresh failure; fall through to currentSession
       }
+      token = auth.currentSession?.accessToken;
     }
     if (requireAuth && (token == null || token.isEmpty)) {
       // ignore: use_build_context_synchronously
@@ -482,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final headers = await _authHeaders(forceRefresh: true, requireAuth: true);
       final response = await http
-          .delete(Uri.parse('$_apiBase/api/users/me'), headers: headers)
+          .post(Uri.parse('$_apiBase/api/users/me/delete'), headers: headers)
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode != 204) {
