@@ -571,27 +571,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ActionChip(
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            _selectedCategoryId == null
-                                ? l.categoryLabel
-                                : (_categories.firstWhere(
-                                      (c) => c['id'] == _selectedCategoryId,
-                                      orElse: () => {'name': l.categoryLabel},
-                                    )['name']
-                                    as String),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: const TextStyle(fontSize: 13),
+                    labelPadding: EdgeInsets.zero,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    label: SizedBox(
+                      width: double.infinity,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              _selectedCategoryId == null
+                                  ? l.categoryLabel
+                                  : (_categories.firstWhere(
+                                        (c) => c['id'] == _selectedCategoryId,
+                                        orElse: () => {'name': l.categoryLabel},
+                                      )['name']
+                                      as String),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.arrow_drop_down, size: 16),
-                      ],
+                          const Icon(Icons.arrow_drop_down, size: 18),
+                        ],
+                      ),
                     ),
                     onPressed: () async {
                       final selected = await showModalBottomSheet<int?>(
@@ -645,21 +648,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ActionChip(
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            sortOpts[_sortBy] ?? l.sort,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: const TextStyle(fontSize: 13),
+                    labelPadding: EdgeInsets.zero,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    label: SizedBox(
+                      width: double.infinity,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              sortOpts[_sortBy] ?? l.sort,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.arrow_drop_down, size: 16),
-                      ],
+                          const Icon(Icons.arrow_drop_down, size: 18),
+                        ],
+                      ),
                     ),
                     onPressed: () async {
                       final selected = await showModalBottomSheet<String>(
@@ -698,22 +704,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ActionChip(
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.my_location, size: 14),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            '$_radiusKm km',
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: const TextStyle(fontSize: 13),
+                    labelPadding: EdgeInsets.zero,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    label: SizedBox(
+                      width: double.infinity,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.my_location, size: 16),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              '$_radiusKm km',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     onPressed: () async {
                       final selected = await showModalBottomSheet<int>(
