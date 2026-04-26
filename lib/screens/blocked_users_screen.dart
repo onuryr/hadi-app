@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../services/report_block_service.dart';
+import '../widgets/error_state.dart';
 
 class BlockedUsersScreen extends StatefulWidget {
   const BlockedUsersScreen({super.key});
@@ -13,6 +14,7 @@ class BlockedUsersScreen extends StatefulWidget {
 class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   List<Map<String, dynamic>> _blocked = [];
   bool _loading = true;
+  String? _error;
   final Set<String> _unblocking = {};
 
   @override
@@ -22,17 +24,12 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   }
 
   Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
     try {
       final list = await ReportBlockService.getMyBlocks();
       if (mounted) setState(() { _blocked = list; _loading = false; });
     } catch (e) {
-      if (mounted) {
-        setState(() => _loading = false);
-        final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l.error}: $e')),
-        );
-      }
+      if (mounted) setState(() { _loading = false; _error = e.toString(); });
     }
   }
 
@@ -72,7 +69,9 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _blocked.isEmpty
+          : _error != null && _blocked.isEmpty
+              ? ErrorState(onRetry: _load)
+              : _blocked.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

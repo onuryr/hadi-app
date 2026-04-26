@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -107,6 +108,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _cancelActivity() async {
+    HapticFeedback.heavyImpact();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -167,6 +169,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _deleteActivity() async {
+    HapticFeedback.heavyImpact();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -269,6 +272,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _toggleFavorite() async {
+    HapticFeedback.selectionClick();
     final newState =
         await FavoritesService.toggle(widget.activity['id'].toString());
     if (mounted) setState(() => _isFavorite = newState);
@@ -305,6 +309,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _joinActivity() async {
+    HapticFeedback.mediumImpact();
     final max = _fullActivity['max_participants'] as int?;
     if (max != null && _approvedParticipants.length >= max) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -347,6 +352,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _leaveActivity() async {
+    HapticFeedback.lightImpact();
     setState(() => _leaving = true);
     try {
       final userId = _supabase.auth.currentUser!.id;
@@ -381,6 +387,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _approveParticipant(String userId) async {
+    HapticFeedback.lightImpact();
     setState(() => _processingUserId = userId);
     try {
       await ParticipantService.updateStatus(
@@ -406,6 +413,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   }
 
   Future<void> _rejectParticipant(String userId) async {
+    HapticFeedback.lightImpact();
     setState(() => _processingUserId = userId);
     try {
       await ParticipantService.updateStatus(

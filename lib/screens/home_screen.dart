@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -281,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _toggleFavorite(String activityId) async {
+    HapticFeedback.selectionClick();
     final isNowFavorite = await FavoritesService.toggle(activityId);
     setState(() {
       if (isNowFavorite) {

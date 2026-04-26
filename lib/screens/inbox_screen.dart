@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../services/chat_service.dart';
 import '../services/deep_link_service.dart';
 import '../utils/category_defaults.dart';
+import '../widgets/error_state.dart';
 import 'chat_screen.dart';
 
 class InboxScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class InboxScreen extends StatefulWidget {
 class _InboxScreenState extends State<InboxScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -25,12 +27,12 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() { _loading = true; _error = null; });
     try {
       final items = await ChatService.fetchInbox();
       if (mounted) setState(() { _items = items; _loading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = e.toString(); });
     }
   }
 
@@ -72,7 +74,9 @@ class _InboxScreenState extends State<InboxScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _items.isEmpty
+          : _error != null && _items.isEmpty
+              ? ErrorState(onRetry: _load)
+              : _items.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
