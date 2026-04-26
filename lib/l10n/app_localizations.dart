@@ -133,6 +133,13 @@ class AppLocalizations {
   String get categoryRequired => _t('Kategori seçmelisin', 'Please select a category');
   String get signOutConfirmTitle => _t('Çıkış yapmak istediğine emin misin?', 'Sign out?');
   String get signOutConfirmContent => _t('Hesabından çıkış yapacaksın. Tekrar giriş yapmak için e-posta ve şifren gerekecek.', 'You will be signed out. You will need your email and password to sign in again.');
+  String get messagesLoadFailed => _t('Mesajlar yüklenemedi', 'Could not load messages');
+  String get noChatYet => _t('Henüz mesaj yok — ilk mesajı sen yaz', 'No messages yet — send the first one');
+  String get deleteError => _t('Silme hatası', 'Delete error');
+  String get ratingSaveFailed => _t('Puan kaydedilemedi, tekrar dene', 'Could not save rating, try again');
+  String get reportSubmittedSnack => _t('Raporunuz iletildi', 'Your report has been submitted');
+  String get capacityFull => _t('Kontenjan dolu', 'Capacity full');
+  String get getDirections => _t('Yol Tarifi Al', 'Get Directions');
 
   // ── Profile ──
   String get profile => _t('Profil', 'Profile');

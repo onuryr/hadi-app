@@ -94,7 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Mesajlar yüklenemedi: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).messagesLoadFailed}: $e')),
         );
       }
     }
@@ -438,13 +438,13 @@ class _ChatScreenState extends State<ChatScreen> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text('Henüz mesaj yok — ilk mesajı sen yaz', style: TextStyle(color: Colors.grey)),
+                            const Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                            const SizedBox(height: 8),
+                            Text(AppLocalizations.of(context).noChatYet, style: const TextStyle(color: Colors.grey)),
                           ],
                         ),
                       )

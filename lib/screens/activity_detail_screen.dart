@@ -191,7 +191,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       if (mounted) {
         setState(() => _deleting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Silme hatası: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).deleteError}: $e')),
         );
       }
     }
@@ -241,7 +241,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           }
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Puan kaydedilemedi, tekrar dene')),
+          SnackBar(content: Text(AppLocalizations.of(context).ratingSaveFailed)),
         );
       }
     }
@@ -323,7 +323,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
         );
       }
     } finally {
@@ -357,7 +357,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
         );
       }
     } finally {
@@ -382,7 +382,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
         );
       }
     } finally {
@@ -407,7 +407,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).error}: $e')),
         );
       }
     } finally {
@@ -589,7 +589,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   );
                   if (ok && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Raporunuz iletildi')),
+                      SnackBar(content: Text(AppLocalizations.of(context).reportSubmittedSnack)),
                     );
                   }
                 } else if (value == 'block') {
@@ -741,7 +741,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                     children: [
                                       Tooltip(
                                         message:
-                                            isFull ? 'Kontenjan dolu' : '',
+                                            isFull ? AppLocalizations.of(context).capacityFull : '',
                                         child: TextButton(
                                           style: TextButton.styleFrom(
                                               foregroundColor: Colors.green),
@@ -750,7 +750,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                               ? null
                                               : () => _approveParticipant(
                                                   pUserId),
-                                          child: const Text('Onayla'),
+                                          child: Text(AppLocalizations.of(context).approve),
                                         ),
                                       ),
                                       TextButton(
@@ -760,7 +760,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                             ? null
                                             : () =>
                                                 _rejectParticipant(pUserId),
-                                        child: const Text('Reddet'),
+                                        child: Text(AppLocalizations.of(context).reject),
                                       ),
                                     ],
                                   ),
@@ -847,7 +847,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 }
                               },
                               icon: const Icon(Icons.directions),
-                              label: const Text('Yol Tarifi Al'),
+                              label: Text(AppLocalizations.of(context).getDirections),
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size(double.infinity, 56),
                                 padding: const EdgeInsets.symmetric(
