@@ -180,7 +180,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'location_name': _locationNameController.text.trim(),
-        'scheduled_at': _scheduledAt.toIso8601String(),
+        'scheduled_at': _scheduledAt.toUtc().toIso8601String(),
         'max_participants': _maxParticipants,
         'location': 'POINT(${_selectedLocation!.longitude} ${_selectedLocation!.latitude})',
       };
