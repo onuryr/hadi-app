@@ -449,11 +449,22 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             SvgPicture.asset('assets/icon/app_icon.svg', width: 28, height: 28),
             const SizedBox(width: 8),
-            Text(
-              'Hadi',
-              style: GoogleFonts.pacifico(
-                fontSize: 26,
-                color: const Color(0xFF512DA8),
+            ShaderMask(
+              shaderCallback: (rect) => const LinearGradient(
+                colors: [Color(0xFF512DA8), Color(0xFFFF9800)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(rect),
+              child: Text(
+                'Hadi',
+                style: GoogleFonts.pacifico(
+                  fontSize: 28,
+                  color: Colors.white,
+                  height: 1.0,
+                  shadows: const [
+                    Shadow(color: Color(0x33000000), blurRadius: 2, offset: Offset(0, 1)),
+                  ],
+                ),
               ),
             ),
           ],
