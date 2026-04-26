@@ -306,7 +306,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 margin: const EdgeInsets.symmetric(vertical: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isMe ? Colors.deepPurple : Colors.grey.shade200,
+                  color: isMe
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(16),
                     topRight: const Radius.circular(16),
@@ -320,15 +322,19 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (!isMe)
                       Text(
                         name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Colors.deepPurple,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     Text(
                       m['content'] ?? '',
-                      style: TextStyle(color: isMe ? Colors.white : Colors.black87),
+                      style: TextStyle(
+                        color: isMe
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -338,7 +344,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           _formatTime(createdAt),
                           style: TextStyle(
                             fontSize: 10,
-                            color: isMe ? Colors.white70 : Colors.grey,
+                            color: isMe
+                                ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.75)
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         if (isOptimistic) ...[
@@ -348,7 +356,9 @@ class _ChatScreenState extends State<ChatScreen> {
                             height: 10,
                             child: CircularProgressIndicator(
                               strokeWidth: 1.5,
-                              color: isMe ? Colors.white70 : Colors.grey,
+                              color: isMe
+                                  ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.75)
+                                  : Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -455,8 +465,8 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
               ),
               child: Row(
                 children: [
@@ -464,14 +474,18 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: TextField(
                       controller: _controller,
                       textCapitalization: TextCapitalization.sentences,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                       decoration: InputDecoration(
-                        hintText: 'Mesaj yaz...',
+                        hintText: AppLocalizations.of(context).typeMessage,
+                        hintStyle: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: Colors.grey.shade100,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
                       onSubmitted: (_) => _send(),
@@ -480,7 +494,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   IconButton(
                     icon: _sending
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.send, color: Colors.deepPurple),
+                        : Icon(Icons.send, color: Theme.of(context).colorScheme.primary),
                     onPressed: _sending ? null : _send,
                   ),
                 ],

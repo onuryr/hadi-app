@@ -75,11 +75,13 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   RealtimeChannel? _messageChannel;
+  String? _myAvatarUrl;
 
   @override
   void initState() {
     super.initState();
     _loadPrefsAndActivities();
+    _loadMyAvatar();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
               _scrollController.position.maxScrollExtent - 200 &&
@@ -89,6 +91,21 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
     _subscribeToMessages();
+  }
+
+  Future<void> _loadMyAvatar() async {
+    final uid = _supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final row = await _supabase
+          .from('users')
+          .select('avatar_url')
+          .eq('id', uid)
+          .maybeSingle();
+      if (mounted) {
+        setState(() => _myAvatarUrl = row?['avatar_url'] as String?);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadPrefsAndActivities() async {
@@ -487,10 +504,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            ),
+            icon: _myAvatarUrl != null && _myAvatarUrl!.isNotEmpty
+                ? CircleAvatar(
+                    radius: 14,
+                    backgroundImage: CachedNetworkImageProvider(_myAvatarUrl!),
+                  )
+                : const Icon(Icons.person),
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+              _loadMyAvatar();
+            },
           ),
           IconButton(icon: const Icon(Icons.logout), tooltip: l.signOut, onPressed: _signOut),
         ],
