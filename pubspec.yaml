@@ -52,6 +52,8 @@ dependencies:
   shared_preferences: ^2.3.3
   intl: ^0.20.2
   shimmer: ^3.0.0
+  flutter_svg: ^2.0.10
+  google_fonts: ^6.2.1
 
 # share_plus 13.x requires win32 ^6.x but geolocator_linux (via package_info_plus)
 # requires win32 <6.x. win32 is Windows-only so forcing 6.x is safe for our Android target.
@@ -72,6 +74,16 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#673AB7"
+  adaptive_icon_foreground: "assets/icon/android_foreground.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -83,6 +95,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/icon/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

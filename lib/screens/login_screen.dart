@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
 import '../services/locale_service.dart';
@@ -246,19 +248,38 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
-              const Text(
-                'Hadi',
-                style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 24),
+              Center(
+                child: SvgPicture.asset(
+                  'assets/icon/app_icon.svg',
+                  width: 110,
+                  height: 110,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ShaderMask(
+                shaderCallback: (rect) => const LinearGradient(
+                  colors: [Color(0xFF512DA8), Color(0xFFFF9800)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(rect),
+                child: Text(
+                  'Hadi',
+                  style: GoogleFonts.pacifico(
+                    fontSize: 64,
+                    color: Colors.white,
+                    height: 1.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 l.appSlogan,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF616161)),
+                style: const TextStyle(color: Color(0xFF616161), fontSize: 14),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 36),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
