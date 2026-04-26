@@ -482,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final headers = await _authHeaders(forceRefresh: true, requireAuth: true);
       final response = await http
-          .post(Uri.parse('$_apiBase/api/users/me/delete'), headers: headers)
+          .delete(Uri.parse('$_apiBase/api/users/me'), headers: headers)
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode != 204) {
