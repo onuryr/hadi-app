@@ -11,8 +11,9 @@ typedef MapPickerResult = ({LatLng location, String? suggestedName});
 
 class _PlaceSuggestion {
   final LatLng latLng;
-  final String label;
-  const _PlaceSuggestion(this.latLng, this.label);
+  final String name;
+  final String context;
+  const _PlaceSuggestion(this.latLng, this.name, this.context);
 }
 
 class MapPickerScreen extends StatefulWidget {
@@ -93,8 +94,24 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         final m = e as Map<String, dynamic>;
         final lat = double.tryParse(m['lat']?.toString() ?? '') ?? 0;
         final lon = double.tryParse(m['lon']?.toString() ?? '') ?? 0;
-        final label = (m['display_name'] as String?) ?? query;
-        return _PlaceSuggestion(LatLng(lat, lon), label);
+        final addr = (m['address'] as Map?)?.cast<String, dynamic>();
+        final fullName = (m['name'] as String?)?.trim();
+        final displayName = (m['display_name'] as String?) ?? query;
+        final parts = displayName.split(',').map((s) => s.trim()).toList();
+        final shortName = (fullName != null && fullName.isNotEmpty)
+            ? fullName
+            : (parts.isNotEmpty ? parts.first : query);
+        final cityParts = addr == null
+            ? <String>[]
+            : [
+                addr['suburb'],
+                addr['town'] ?? addr['city'] ?? addr['village'],
+                addr['state'],
+              ].whereType<String>().where((s) => s.isNotEmpty).toSet().toList();
+        final cityContext = cityParts.isNotEmpty
+            ? cityParts.join(', ')
+            : parts.skip(1).take(2).join(', ');
+        return _PlaceSuggestion(LatLng(lat, lon), shortName, cityContext);
       }).toList();
       if (mounted) {
         setState(() => _suggestions = results);
@@ -119,7 +136,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     FocusScope.of(context).unfocus();
     setState(() {
       _selectedLocation = s.latLng;
-      _selectedName = s.label;
+      _selectedName = s.name;
       _suggestions = [];
     });
     _mapController?.animateCamera(CameraUpdate.newLatLngZoom(s.latLng, 15));
@@ -259,11 +276,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                           return ListTile(
                             dense: true,
                             leading: const Icon(Icons.place_outlined, size: 20),
-                            title: Text(s.label, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            subtitle: Text(
-                              '${s.latLng.latitude.toStringAsFixed(4)}, ${s.latLng.longitude.toStringAsFixed(4)}',
-                              style: const TextStyle(fontSize: 11),
-                            ),
+                            title: Text(s.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            subtitle: s.context.isEmpty
+                                ? null
+                                : Text(s.context,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 11)),
                             onTap: () => _pickSuggestion(s),
                           );
                         },
