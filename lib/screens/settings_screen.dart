@@ -488,8 +488,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (response.statusCode != 204) {
         final hasAuthHeader = headers['Authorization']?.isNotEmpty == true;
         final error = _extractErrorMessage(response);
+        final body = response.body.isNotEmpty ? response.body : '(empty)';
         throw Exception(
-          'HTTP ${response.statusCode} (authHeader: $hasAuthHeader) - $error',
+          'HTTP ${response.statusCode} | auth:$hasAuthHeader | $error | raw:$body',
         );
       }
 

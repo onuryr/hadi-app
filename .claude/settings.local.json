@@ -35,7 +35,18 @@
       "Bash(curl -s \"https://hadi-production-e4f3.up.railway.app/\")",
       "Bash(dotnet ef *)",
       "Bash(dotnet tool *)",
-      "Bash(grep -n \"import.*shared_preferences\\\\|@override\\\\s*$\\\\|void initState\" lib/screens/home_screen.dart)"
+      "Bash(grep -n \"import.*shared_preferences\\\\|@override\\\\s*$\\\\|void initState\" lib/screens/home_screen.dart)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:3100/api/health)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3100 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 54329 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process node,postgres -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime,@{N='CmdLine';E={\\(Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.Id\\)\"\\).CommandLine}} | Format-Table -Wrap -AutoSize)",
+      "PowerShell($procs = Get-CimInstance Win32_Process | Where-Object { $_.Name -in @\\('node.exe','postgres.exe','pnpm.exe'\\) }; $procs | Select-Object ProcessId, Name, CommandLine | Format-Table -Wrap -AutoSize)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")",
+      "Bash(tasklist //FI \"IMAGENAME eq postgres.exe\")",
+      "Bash(awk '/name: \"Reports\"/,/}\\\\\\);/' HadiApi/Migrations/20260425063956_AddReportsAndUserBlocks.cs)",
+      "Bash(awk '/name: \"UserBlocks\"/,/}\\\\\\);/' HadiApi/Migrations/20260425063956_AddReportsAndUserBlocks.cs)",
+      "Bash(git worktree *)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\\\\n\" -X DELETE \"https://hadi-production-e4f3.up.railway.app/api/users/me\")"
     ]
   }
 }
