@@ -494,6 +494,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(l.userBlockedSnack(name)),
+                        duration: const Duration(seconds: 4),
                         action: SnackBarAction(
                           label: l.undo,
                           onPressed: () async {
@@ -516,6 +517,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('$name — ${l.unblockedSuccess}'),
+                          duration: const Duration(seconds: 4),
                           action: SnackBarAction(
                             label: l.undo,
                             onPressed: () async {
