@@ -30,7 +30,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   final _locationNameController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  int _selectedCategory = 1;
+  int? _selectedCategory;
   int _maxParticipants = 10;
   DateTime _scheduledAt = DateTime.now().add(const Duration(days: 1));
   LatLng? _selectedLocation;
@@ -48,7 +48,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       _titleController.text = e['title'] ?? '';
       _descriptionController.text = e['description'] ?? '';
       _locationNameController.text = e['location_name'] ?? '';
-      _selectedCategory = e['category_id'] ?? 1;
+      _selectedCategory = e['category_id'] as int?;
       _maxParticipants = e['max_participants'] ?? 10;
       if (e['scheduled_at'] != null) {
         _scheduledAt = DateTime.parse(e['scheduled_at']).toLocal();
@@ -108,16 +108,16 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   }
 
   List<Map<String, dynamic>> _categoriesFor(AppLocalizations l) => [
-        {'id': 1, 'name': l.catWalk},
-        {'id': 2, 'name': l.catRun},
-        {'id': 3, 'name': l.catFootball},
-        {'id': 4, 'name': l.catBasketball},
-        {'id': 5, 'name': l.catCycling},
-        {'id': 6, 'name': l.catConcert},
-        {'id': 7, 'name': l.catTheatre},
-        {'id': 8, 'name': l.catFood},
-        {'id': 9, 'name': l.catMuseum},
-        {'id': 10, 'name': l.catCinema},
+        {'id': 1, 'name': l.catWalk, 'icon': '🚶'},
+        {'id': 2, 'name': l.catRun, 'icon': '🏃'},
+        {'id': 3, 'name': l.catFootball, 'icon': '⚽'},
+        {'id': 4, 'name': l.catBasketball, 'icon': '🏀'},
+        {'id': 5, 'name': l.catCycling, 'icon': '🚴'},
+        {'id': 6, 'name': l.catConcert, 'icon': '🎵'},
+        {'id': 7, 'name': l.catTheatre, 'icon': '🎭'},
+        {'id': 8, 'name': l.catFood, 'icon': '🍽️'},
+        {'id': 9, 'name': l.catMuseum, 'icon': '🏛️'},
+        {'id': 10, 'name': l.catCinema, 'icon': '🎬'},
       ];
 
   Future<void> _pickLocation() async {
@@ -347,8 +347,10 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<int>(
               value: _selectedCategory,
+              isExpanded: true,
               decoration: InputDecoration(
                 labelText: l.categoryLabel,
+                hintText: l.categoryHint,
                 border: const OutlineInputBorder(),
                 helperText: widget.lockCategory ? l.categoryLockedHelper : null,
                 suffixIcon: widget.lockCategory ? const Icon(Icons.lock, size: 18) : null,
@@ -356,10 +358,17 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
               items: categories.map((c) {
                 return DropdownMenuItem<int>(
                   value: c['id'] as int,
-                  child: Text(c['name'] as String),
+                  child: Row(
+                    children: [
+                      Text(c['icon'] as String, style: const TextStyle(fontSize: 18)),
+                      const SizedBox(width: 12),
+                      Text(c['name'] as String),
+                    ],
+                  ),
                 );
               }).toList(),
-              onChanged: widget.lockCategory ? null : (v) => setState(() => _selectedCategory = v!),
+              onChanged: widget.lockCategory ? null : (v) => setState(() => _selectedCategory = v),
+              validator: (v) => v == null ? l.categoryRequired : null,
             ),
             const SizedBox(height: 16),
             ListTile(

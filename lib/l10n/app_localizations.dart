@@ -129,6 +129,10 @@ class AppLocalizations {
   String get catFood => _t('Yemek', 'Food');
   String get catMuseum => _t('Müze', 'Museum');
   String get catCinema => _t('Sinema', 'Cinema');
+  String get categoryHint => _t('Bir kategori seç', 'Pick a category');
+  String get categoryRequired => _t('Kategori seçmelisin', 'Please select a category');
+  String get signOutConfirmTitle => _t('Çıkış yapmak istediğine emin misin?', 'Sign out?');
+  String get signOutConfirmContent => _t('Hesabından çıkış yapacaksın. Tekrar giriş yapmak için e-posta ve şifren gerekecek.', 'You will be signed out. You will need your email and password to sign in again.');
 
   // ── Profile ──
   String get profile => _t('Profil', 'Profile');
