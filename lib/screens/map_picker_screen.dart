@@ -1,7 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import '../l10n/app_localizations.dart';
 
 typedef MapPickerResult = ({LatLng location, String? suggestedName});
@@ -31,6 +34,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   bool _searching = false;
   final _searchController = TextEditingController();
   List<_PlaceSuggestion> _suggestions = [];
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -43,6 +47,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -59,41 +64,46 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     } catch (_) {}
   }
 
-  String _formatPlacemark(Placemark p, String fallback) {
-    final parts = [p.name, p.street, p.subLocality, p.locality, p.country]
-        .where((s) => s != null && s.isNotEmpty)
-        .toSet()
-        .toList();
-    final label = parts.join(', ');
-    return label.isEmpty ? fallback : label;
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    final q = value.trim();
+    if (q.length < 2) {
+      setState(() => _suggestions = []);
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () => _searchPlace(q));
   }
 
-  Future<void> _searchPlace() async {
-    final query = _searchController.text.trim();
+  Future<void> _searchPlace([String? override]) async {
+    final query = (override ?? _searchController.text).trim();
     if (query.isEmpty) return;
-    FocusScope.of(context).unfocus();
-    setState(() { _searching = true; _suggestions = []; });
+    setState(() => _searching = true);
     try {
-      final locations = await locationFromAddress(query);
-      if (locations.isEmpty) {
-        if (mounted) {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/search'
+        '?q=${Uri.encodeQueryComponent(query)}'
+        '&format=json&addressdetails=1&limit=8&accept-language=tr,en',
+      );
+      final resp = await http
+          .get(uri, headers: {'User-Agent': 'HadiApp/1.0 (hadi.app)'})
+          .timeout(const Duration(seconds: 8));
+      if (resp.statusCode != 200) throw Exception('HTTP ${resp.statusCode}');
+      final list = jsonDecode(resp.body) as List;
+      final results = list.map((e) {
+        final m = e as Map<String, dynamic>;
+        final lat = double.tryParse(m['lat']?.toString() ?? '') ?? 0;
+        final lon = double.tryParse(m['lon']?.toString() ?? '') ?? 0;
+        final label = (m['display_name'] as String?) ?? query;
+        return _PlaceSuggestion(LatLng(lat, lon), label);
+      }).toList();
+      if (mounted) {
+        setState(() => _suggestions = results);
+        if (results.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context).placeNotFound)),
           );
         }
-        return;
       }
-      final results = await Future.wait(locations.take(8).map((loc) async {
-        final ll = LatLng(loc.latitude, loc.longitude);
-        try {
-          final pms = await placemarkFromCoordinates(loc.latitude, loc.longitude);
-          if (pms.isNotEmpty) {
-            return _PlaceSuggestion(ll, _formatPlacemark(pms.first, query));
-          }
-        } catch (_) {}
-        return _PlaceSuggestion(ll, query);
-      }));
-      if (mounted) setState(() => _suggestions = results);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -226,7 +236,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             )
                           : null,
                     ),
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (v) {
+                      setState(() {});
+                      _onSearchChanged(v);
+                    },
                   ),
                 ),
                 if (_suggestions.isNotEmpty) ...[
