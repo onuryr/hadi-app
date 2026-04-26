@@ -13,6 +13,7 @@ import '../services/rating_service.dart';
 import '../services/participant_service.dart';
 import '../services/report_block_service.dart';
 import '../utils/category_defaults.dart';
+import '../widgets/activity_detail_skeleton.dart';
 import '../widgets/star_rating.dart';
 import 'chat_screen.dart';
 import 'create_activity_screen.dart';
@@ -32,6 +33,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   List<Map<String, dynamic>> _participants = [];
   Map<String, dynamic> _fullActivity = {};
   bool _loading = true;
+  bool _skeletonMinPassed = false;
   bool _joining = false;
   bool _leaving = false;
   bool _deleting = false;
@@ -201,6 +203,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     super.initState();
     _fullActivity = Map.from(widget.activity);
     _loadData();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _skeletonMinPassed = true);
+    });
   }
 
   Future<void> _loadData() async {
@@ -613,8 +618,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
             ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
+      body: (_loading || !_skeletonMinPassed)
+          ? const ActivityDetailSkeleton()
           : ListView(
               padding: EdgeInsets.zero,
               children: [
