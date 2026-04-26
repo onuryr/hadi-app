@@ -142,7 +142,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l.activityCancelled),
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 3),
             action: SnackBarAction(
               label: l.undo,
               onPressed: () async {
