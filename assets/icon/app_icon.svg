@@ -1,27 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <defs>
-    <style>
-      .pin-left { fill: #512DA8; }
-      .pin-right { fill: #673AB7; }
-      .inner-circle { fill: #FFFFFF; }
-      .person-left { fill: #673AB7; }
-      .person-center { fill: #512DA8; }
-      .person-right { fill: #FF9800; }
-    </style>
-  </defs>
-
-  <path class="pin-left" d="M512 80 C270 80 120 280 120 500 C120 740 512 960 512 960 L512 80 Z"/>
-
-  <path class="pin-right" d="M512 80 C754 80 904 280 904 500 C904 740 512 960 512 960 L512 80 Z"/>
-
-  <circle class="inner-circle" cx="512" cy="460" r="240"/>
-
-  <circle class="person-right" cx="660" cy="380" r="35"/>
-  <path class="person-right" d="M600 600 L620 460 C630 420 690 420 700 460 L720 600 Z"/>
-
-  <circle class="person-left" cx="364" cy="380" r="35"/>
-  <path class="person-left" d="M304 600 L324 460 C334 420 394 420 404 460 L424 600 Z"/>
-
-  <circle class="person-center" cx="512" cy="340" r="45"/>
-  <path class="person-center" d="M432 600 L462 440 C472 390 552 390 562 440 L592 600 Z"/>
+  <path fill="#512DA8" d="M512 80 C270 80 120 280 120 500 C120 740 512 960 512 960 L512 80 Z"/>
+  <path fill="#673AB7" d="M512 80 C754 80 904 280 904 500 C904 740 512 960 512 960 L512 80 Z"/>
+  <circle fill="#FFFFFF" cx="512" cy="460" r="240"/>
+  <circle fill="#FF9800" cx="660" cy="380" r="35"/>
+  <path fill="#FF9800" d="M600 600 L620 460 C630 420 690 420 700 460 L720 600 Z"/>
+  <circle fill="#673AB7" cx="364" cy="380" r="35"/>
+  <path fill="#673AB7" d="M304 600 L324 460 C334 420 394 420 404 460 L424 600 Z"/>
+  <circle fill="#512DA8" cx="512" cy="340" r="45"/>
+  <path fill="#512DA8" d="M432 600 L462 440 C472 390 552 390 562 440 L592 600 Z"/>
 </svg>

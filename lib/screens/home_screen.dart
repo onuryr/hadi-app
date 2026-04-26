@@ -443,20 +443,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final sortOpts = _sortOptions(l);
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 0,
+        titleSpacing: 12,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             SvgPicture.asset('assets/icon/app_icon.svg', width: 28, height: 28),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Text(
               'Hadi',
               style: GoogleFonts.pacifico(
                 fontSize: 28,
                 foreground: Paint()
                   ..shader = const LinearGradient(
-                    colors: [Color(0xFF512DA8), Color(0xFFFF9800)],
-                    stops: [0.2, 1.0],
+                    colors: [Color(0xFFFFB74D), Color(0xFFE65100)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ).createShader(const Rect.fromLTWH(0, 0, 100, 28)),
