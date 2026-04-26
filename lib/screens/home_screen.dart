@@ -452,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatDate(String? scheduledAt) {
     if (scheduledAt == null) return '';
-    final dt = DateTime.parse(scheduledAt);
+    final dt = DateTime.parse(scheduledAt).toLocal();
     return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 

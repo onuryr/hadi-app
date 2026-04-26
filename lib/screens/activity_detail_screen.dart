@@ -558,7 +558,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   Widget build(BuildContext context) {
     final activity = _fullActivity;
     final scheduledAt = activity['scheduled_at'] != null
-        ? DateTime.parse(activity['scheduled_at'])
+        ? DateTime.parse(activity['scheduled_at']).toLocal()
         : null;
 
     return Scaffold(
