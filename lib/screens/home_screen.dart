@@ -178,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadActivities() async {
     final loadStart = DateTime.now();
-    setState(() { _loading = true; _error = null; _page = 1; });
+    setState(() { _loading = true; _error = null; _page = 1; _loadingMore = false; });
     try {
       final (pageResult, favs) = await (
         _fetchPage(1),
@@ -203,6 +203,31 @@ class _HomeScreenState extends State<HomeScreen> {
         await Future.delayed(const Duration(milliseconds: 300) - elapsed);
       }
       setState(() { _loading = false; _error = e.toString(); });
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    setState(() => _loadingMore = false);
+    try {
+      final (pageResult, favs) = await (
+        _fetchPage(1),
+        FavoritesService.getFavoriteIds(),
+      ).wait;
+      final (items, hasMore) = pageResult;
+      setState(() {
+        _activities = items;
+        _favoriteIds = favs;
+        _page = 1;
+        _hasMore = hasMore;
+        _error = null;
+      });
+      _refreshUnread();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Yenilenirken bir hata oluştu.')),
+        );
+      }
     }
   }
 
@@ -519,155 +544,173 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 : _showMap
                     ? _buildMapView()
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.grey),
-                      const SizedBox(height: 8),
-                      Text('Aktiviteler yüklenemedi', style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadActivities,
-                        child: const Text('Tekrar Dene'),
-                      ),
-                    ],
-                  ),
-                )
-              : _activities.isEmpty
-                  ? const Center(child: Text('Yakında aktif aktivite bulunamadı'))
-                  : RefreshIndicator(
-                      onRefresh: _loadActivities,
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: _activities.length + (_hasMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == _activities.length) {
-                            return const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          final activity = _activities[index];
-                          final imageUrl = activityImageUrl(
-                            imageUrl: activity['image_url'],
-                            categoryId: activity['category_id'],
-                          );
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: () async {
-                                final deleted = await Navigator.of(context).push<bool>(
-                                  MaterialPageRoute(
-                                    builder: (_) => ActivityDetailScreen(activity: activity),
-                                  ),
-                                );
-                                if (deleted == true) _loadActivities();
-                              },
-                              onLongPress: () => _shareActivity(activity),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Stack(
-                                    children: [
-                                      AspectRatio(
-                                        aspectRatio: 16 / 9,
-                                        child: CachedNetworkImage(
-                                          imageUrl: imageUrl,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          placeholder: (_, __) => Container(color: Colors.grey.shade200),
-                                          errorWidget: (_, __, ___) => Container(
-                                            color: Colors.grey.shade200,
-                                            child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                    : RefreshIndicator(
+                        onRefresh: _onRefresh,
+                        child: _error != null
+                            ? LayoutBuilder(
+                                builder: (context, constraints) => SingleChildScrollView(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                                          const SizedBox(height: 8),
+                                          Text('Aktiviteler yüklenemedi', style: Theme.of(context).textTheme.titleMedium),
+                                          const SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: _loadActivities,
+                                            child: const Text('Tekrar Dene'),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                      Positioned(
-                                        top: 8,
-                                        right: 8,
-                                        child: Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black.withValues(alpha: 0.6),
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: Text(
-                                                _formatDistance(activity['distance_km']),
-                                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            IconButton(
-                                              iconSize: 18,
-                                              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                                              style: IconButton.styleFrom(
-                                                backgroundColor: Colors.black.withValues(alpha: 0.6),
-                                                shape: const CircleBorder(),
-                                                padding: EdgeInsets.zero,
-                                              ),
-                                              onPressed: () => _toggleFavorite(activity['id'].toString()),
-                                              icon: Icon(
-                                                _favoriteIds.contains(activity['id'].toString())
-                                                    ? Icons.favorite
-                                                    : Icons.favorite_border,
-                                                color: _favoriteIds.contains(activity['id'].toString())
-                                                    ? Colors.red
-                                                    : Colors.white,
-                                                size: 18,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (activity['category_name'] != null)
-                                        Positioned(
-                                          top: 8,
-                                          left: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.deepPurple,
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              activity['category_name'],
-                                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          activity['title'] ?? '',
-                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text('📍 ${activity['location_name'] ?? ''}', style: const TextStyle(fontSize: 13)),
-                                        Text(
-                                          '🕐 ${_formatDate(activity['scheduled_at'])}  👥 ${activity['participant_count'] ?? 0}/${activity['max_participants'] ?? '?'}',
-                                          style: const TextStyle(fontSize: 12, color: Color(0xFF616161)),
-                                        ),
-                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                                ),
+                              )
+                            : _activities.isEmpty
+                                ? LayoutBuilder(
+                                    builder: (context, constraints) => SingleChildScrollView(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                        child: const Center(child: Text('Yakında aktif aktivite bulunamadı')),
+                                      ),
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    controller: _scrollController,
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    itemCount: _activities.length + (_hasMore ? 1 : 0),
+                                    itemBuilder: (context, index) {
+                                      if (index == _activities.length) {
+                                        return const Padding(
+                                          padding: EdgeInsets.all(16),
+                                          child: Center(child: CircularProgressIndicator()),
+                                        );
+                                      }
+                                      final activity = _activities[index];
+                                      final imageUrl = activityImageUrl(
+                                        imageUrl: activity['image_url'],
+                                        categoryId: activity['category_id'],
+                                      );
+                                      return Card(
+                                        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: InkWell(
+                                          onTap: () async {
+                                            final deleted = await Navigator.of(context).push<bool>(
+                                              MaterialPageRoute(
+                                                builder: (_) => ActivityDetailScreen(activity: activity),
+                                              ),
+                                            );
+                                            if (deleted == true) _loadActivities();
+                                          },
+                                          onLongPress: () => _shareActivity(activity),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                                            children: [
+                                              Stack(
+                                                children: [
+                                                  AspectRatio(
+                                                    aspectRatio: 16 / 9,
+                                                    child: CachedNetworkImage(
+                                                      imageUrl: imageUrl,
+                                                      fit: BoxFit.cover,
+                                                      width: double.infinity,
+                                                      placeholder: (_, __) => Container(color: Colors.grey.shade200),
+                                                      errorWidget: (_, __, ___) => Container(
+                                                        color: Colors.grey.shade200,
+                                                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Positioned(
+                                                    top: 8,
+                                                    right: 8,
+                                                    child: Row(
+                                                      children: [
+                                                        Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.black.withValues(alpha: 0.6),
+                                                            borderRadius: BorderRadius.circular(12),
+                                                          ),
+                                                          child: Text(
+                                                            _formatDistance(activity['distance_km']),
+                                                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 6),
+                                                        IconButton(
+                                                          iconSize: 18,
+                                                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                                                          style: IconButton.styleFrom(
+                                                            backgroundColor: Colors.black.withValues(alpha: 0.6),
+                                                            shape: const CircleBorder(),
+                                                            padding: EdgeInsets.zero,
+                                                          ),
+                                                          onPressed: () => _toggleFavorite(activity['id'].toString()),
+                                                          icon: Icon(
+                                                            _favoriteIds.contains(activity['id'].toString())
+                                                                ? Icons.favorite
+                                                                : Icons.favorite_border,
+                                                            color: _favoriteIds.contains(activity['id'].toString())
+                                                                ? Colors.red
+                                                                : Colors.white,
+                                                            size: 18,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  if (activity['category_name'] != null)
+                                                    Positioned(
+                                                      top: 8,
+                                                      left: 8,
+                                                      child: Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.deepPurple,
+                                                          borderRadius: BorderRadius.circular(12),
+                                                        ),
+                                                        child: Text(
+                                                          activity['category_name'],
+                                                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.all(12),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      activity['title'] ?? '',
+                                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text('📍 ${activity['location_name'] ?? ''}', style: const TextStyle(fontSize: 13)),
+                                                    Text(
+                                                      '🕐 ${_formatDate(activity['scheduled_at'])}  👥 ${activity['participant_count'] ?? 0}/${activity['max_participants'] ?? '?'}',
+                                                      style: const TextStyle(fontSize: 12, color: Color(0xFF616161)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+
+                                    },
+                                  ),
                       ),
-                    ),
           ),
         ],
       ),

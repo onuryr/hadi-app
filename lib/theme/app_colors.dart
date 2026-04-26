@@ -69,4 +69,13 @@ abstract final class AppColors {
 
   /// Star / rating empty track.
   static const Color starEmpty = Color(0xFFCAC4D0);
+
+  /// Muted text/icon color for empty states and placeholders.
+  static const Color textMuted = Color(0xFF9E9E9E);
+
+  /// Shimmer skeleton animation base color.
+  static const Color shimmerBase = Color(0xFFE0E0E0);
+
+  /// Shimmer skeleton animation highlight color.
+  static const Color shimmerHighlight = Color(0xFFF5F5F5);
 }
