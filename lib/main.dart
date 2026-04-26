@@ -1,10 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/deep_link_service.dart';
+import 'services/locale_service.dart';
 import 'services/notification_service.dart';
 import 'services/theme_service.dart';
 
@@ -27,6 +29,7 @@ Future<void> main() async {
   }
 
   themeNotifier = await ThemeNotifier.load();
+  localeNotifier = await LocaleNotifier.load();
 
   final seenOnboarding = await OnboardingScreen.hasSeenOnboarding();
   runApp(MyApp(seenOnboarding: seenOnboarding));
@@ -46,11 +49,13 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     themeNotifier.addListener(_onThemeChanged);
+    localeNotifier.addListener(_onThemeChanged);
   }
 
   @override
   void dispose() {
     themeNotifier.removeListener(_onThemeChanged);
+    localeNotifier.removeListener(_onThemeChanged);
     super.dispose();
   }
 
@@ -70,6 +75,16 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Hadi',
       navigatorKey: NotificationService.navigatorKey,
+      locale: localeNotifier.locale,
+      supportedLocales: const [
+        Locale('tr'),
+        Locale('en'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
