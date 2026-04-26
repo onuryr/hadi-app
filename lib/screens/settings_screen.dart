@@ -596,18 +596,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: SegmentedButton<AppLocaleMode>(
-                  segments: [
+                  segments: const [
                     ButtonSegment(
-                      value: AppLocaleMode.system,
-                      label: Text(l2.systemTheme),
-                      icon: const Icon(Icons.smartphone),
-                    ),
-                    const ButtonSegment(
                       value: AppLocaleMode.tr,
                       label: Text('Türkçe'),
-                      icon: Icon(Icons.language),
+                      icon: Icon(Icons.translate),
                     ),
-                    const ButtonSegment(
+                    ButtonSegment(
                       value: AppLocaleMode.en,
                       label: Text('English'),
                       icon: Icon(Icons.translate),

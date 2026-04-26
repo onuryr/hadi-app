@@ -77,6 +77,7 @@ class _MyAppState extends State<MyApp> {
       title: 'Hadi',
       navigatorKey: NotificationService.navigatorKey,
       locale: localeNotifier.locale,
+      localeResolutionCallback: (deviceLocale, supportedLocales) => localeNotifier.locale,
       supportedLocales: const [
         Locale('tr'),
         Locale('en'),

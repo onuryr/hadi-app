@@ -159,43 +159,37 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  String _localeLabel(AppLocaleMode mode, AppLocalizations l) => switch (mode) {
-        AppLocaleMode.system => l.systemTheme,
+  String _localeLabel(AppLocaleMode mode) => switch (mode) {
         AppLocaleMode.tr => 'Türkçe',
         AppLocaleMode.en => 'English',
       };
 
-  Future<void> _openLanguageMenu(BuildContext anchorContext) async {
-    final l = AppLocalizations.of(anchorContext);
-    final overlay = Overlay.of(anchorContext).context.findRenderObject() as RenderBox;
-    final button = anchorContext.findRenderObject() as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(Offset(0, button.size.height), ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+  Future<void> _openLanguageSheet() async {
+    final picked = await showModalBottomSheet<AppLocaleMode>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Text('🇹🇷', style: TextStyle(fontSize: 24)),
+              title: const Text('Türkçe'),
+              trailing: localeNotifier.mode == AppLocaleMode.tr
+                  ? const Icon(Icons.check, color: Colors.deepPurple)
+                  : null,
+              onTap: () => Navigator.of(ctx).pop(AppLocaleMode.tr),
+            ),
+            ListTile(
+              leading: const Text('🇬🇧', style: TextStyle(fontSize: 24)),
+              title: const Text('English'),
+              trailing: localeNotifier.mode == AppLocaleMode.en
+                  ? const Icon(Icons.check, color: Colors.deepPurple)
+                  : null,
+              onTap: () => Navigator.of(ctx).pop(AppLocaleMode.en),
+            ),
+          ],
+        ),
       ),
-      Offset.zero & overlay.size,
-    );
-    final picked = await showMenu<AppLocaleMode>(
-      context: anchorContext,
-      position: position,
-      items: [
-        CheckedPopupMenuItem(
-          value: AppLocaleMode.system,
-          checked: localeNotifier.mode == AppLocaleMode.system,
-          child: Text(l.systemTheme),
-        ),
-        CheckedPopupMenuItem(
-          value: AppLocaleMode.tr,
-          checked: localeNotifier.mode == AppLocaleMode.tr,
-          child: const Text('Türkçe'),
-        ),
-        CheckedPopupMenuItem(
-          value: AppLocaleMode.en,
-          checked: localeNotifier.mode == AppLocaleMode.en,
-          child: const Text('English'),
-        ),
-      ],
     );
     if (picked != null) {
       await localeNotifier.setMode(picked);
@@ -207,28 +201,26 @@ class _LoginScreenState extends State<LoginScreen> {
       listenable: localeNotifier,
       builder: (context, _) {
         final l = AppLocalizations.of(context);
-        return Builder(
-          builder: (btnContext) => Material(
-            color: Theme.of(context).colorScheme.surface,
-            elevation: 1,
+        return Material(
+          color: Theme.of(context).colorScheme.surface,
+          elevation: 1,
+          borderRadius: BorderRadius.circular(24),
+          child: InkWell(
             borderRadius: BorderRadius.circular(24),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () => _openLanguageMenu(btnContext),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.translate, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${l.language}: ${_localeLabel(localeNotifier.mode, l)}',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const Icon(Icons.arrow_drop_down, size: 20),
-                  ],
-                ),
+            onTap: _openLanguageSheet,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.translate, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${l.language}: ${_localeLabel(localeNotifier.mode)}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const Icon(Icons.arrow_drop_down, size: 20),
+                ],
               ),
             ),
           ),
