@@ -17,6 +17,7 @@ import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/category_defaults.dart';
 import '../widgets/activity_card_skeleton.dart';
+import '../widgets/empty_state.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -536,7 +537,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 )
               : _activities.isEmpty
-                  ? const Center(child: Text('Yakında aktif aktivite bulunamadı'))
+                  ? EmptyState(
+                      icon: Icons.explore_outlined,
+                      title: 'Yakında aktivite yok',
+                      message: 'Bu bölgede henüz kimse aktivite oluşturmamış. İlk adımı sen at!',
+                      actionLabel: 'Aktivite Oluştur',
+                      onAction: () async {
+                        final result = await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const CreateActivityScreen()),
+                        );
+                        if (result == true) _loadActivities();
+                      },
+                    )
                   : RefreshIndicator(
                       onRefresh: _loadActivities,
                       child: ListView.builder(
