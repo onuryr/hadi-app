@@ -357,6 +357,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             onDismissed: (_) async {
               HapticFeedback.mediumImpact();
               final removed = a;
+              final messenger = ScaffoldMessenger.of(this.context);
               setState(() {
                 if (listType == 'favorite') {
                   _favoriteActivities.removeWhere((x) => x['id'].toString() == activityId);
@@ -373,8 +374,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       .update({'status': 'inactive'}).eq('id', activityId);
                 }
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.hideCurrentSnackBar();
+                messenger.showSnackBar(
                   SnackBar(
                     content: Text(listType == 'favorite'
                         ? l.removeFromFavorites
@@ -411,7 +412,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     _createdActivities.insert(0, removed);
                   }
                 });
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(content: Text('${l.error}: $e')),
                 );
               }

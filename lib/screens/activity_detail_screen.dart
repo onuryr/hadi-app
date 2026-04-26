@@ -492,8 +492,18 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     return _participants.any((p) => p['user_id'] == userId);
   }
 
-  List<Map<String, dynamic>> get _approvedParticipants =>
-      _participants.where((p) => p['status'] == 'approved').toList();
+  List<Map<String, dynamic>> get _approvedParticipants {
+    final creatorId = _fullActivity['creator_id'];
+    final list = _participants.where((p) => p['status'] == 'approved').toList();
+    list.sort((a, b) {
+      final aCreator = a['user_id'] == creatorId;
+      final bCreator = b['user_id'] == creatorId;
+      if (aCreator && !bCreator) return -1;
+      if (!aCreator && bCreator) return 1;
+      return 0;
+    });
+    return list;
+  }
 
   List<Map<String, dynamic>> get _pendingParticipants =>
       _participants.where((p) => p['status'] == 'pending').toList();
@@ -814,6 +824,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             p['users']?['display_name'] ?? AppLocalizations.of(context).unknownUser;
                         final avatarUrl =
                             p['users']?['avatar_url'] as String?;
+                        final isCreator =
+                            p['user_id'] == _fullActivity['creator_id'];
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: CircleAvatar(
@@ -827,6 +839,41 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 : null,
                           ),
                           title: Text(name),
+                          trailing: isCreator
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.star,
+                                        size: 14,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimaryContainer,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        AppLocalizations.of(context).organizerLabel,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimaryContainer,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : null,
                           onTap: userId == null
                               ? null
                               : () => Navigator.of(context).push(
