@@ -314,26 +314,28 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     tooltip: l.edit,
                     onPressed: () => setState(() => _editMode = true),
                   ),
-          if (_isSelf && !_loading)
-            PopupMenuButton<String>(
+          if (_isSelf && !_loading) ...[
+            IconButton(
               icon: const Icon(Icons.settings_outlined),
               tooltip: l.settings,
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ),
+            ),
+            PopupMenuButton<String>(
+              tooltip: l.blockedUsers,
               onSelected: (value) {
                 if (value == 'blocked') {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
                   );
-                } else if (value == 'settings') {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  );
                 }
               },
               itemBuilder: (_) => [
-                PopupMenuItem(value: 'settings', child: Text(l.settings)),
                 PopupMenuItem(value: 'blocked', child: Text(l.blockedUsers)),
               ],
             ),
+          ],
           if (!_isSelf && !_loading)
             PopupMenuButton<String>(
               onSelected: (value) async {
