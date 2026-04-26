@@ -257,20 +257,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              ShaderMask(
-                shaderCallback: (rect) => const LinearGradient(
-                  colors: [Color(0xFF512DA8), Color(0xFFFF9800)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(rect),
-                child: Text(
-                  'Hadi',
-                  style: GoogleFonts.pacifico(
-                    fontSize: 64,
-                    color: Colors.white,
-                    height: 1.0,
-                  ),
-                  textAlign: TextAlign.center,
+              Text(
+                'Hadi',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.pacifico(
+                  fontSize: 64,
+                  foreground: Paint()
+                    ..shader = const LinearGradient(
+                      colors: [Color(0xFF512DA8), Color(0xFFFF9800)],
+                      stops: [0.2, 1.0],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ).createShader(const Rect.fromLTWH(0, 0, 220, 64)),
                 ),
               ),
               const SizedBox(height: 8),
