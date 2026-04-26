@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -174,19 +175,53 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 512);
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+      maxWidth: 1600,
+    );
     if (image == null) return;
+    if (!mounted) return;
+
+    final l = AppLocalizations.of(context);
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: image.path,
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 85,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: l.cropPhotoTitle,
+          toolbarColor: Colors.deepPurple,
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: Colors.deepPurple,
+          aspectRatioPresets: [CropAspectRatioPreset.square],
+          cropStyle: CropStyle.circle,
+          hideBottomControls: true,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(
+          title: l.cropPhotoTitle,
+          doneButtonTitle: l.done,
+          cancelButtonTitle: l.cancel,
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+          aspectRatioPresets: [CropAspectRatioPreset.square],
+          cropStyle: CropStyle.circle,
+        ),
+      ],
+    );
+    if (cropped == null) return;
 
     try {
       final userId = _supabase.auth.currentUser!.id;
-      final file = File(image.path);
-      final ext = image.path.split('.').last.toLowerCase();
-      final path = '$userId/avatar.$ext';
+      final file = File(cropped.path);
+      final path = '$userId/avatar.jpg';
 
       await _supabase.storage.from('avatars').upload(path, file,
-          fileOptions: const FileOptions(upsert: true));
+          fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'));
 
-      final url = _supabase.storage.from('avatars').getPublicUrl(path);
+      final base = _supabase.storage.from('avatars').getPublicUrl(path);
+      final url = '$base?v=${DateTime.now().millisecondsSinceEpoch}';
       await _supabase.from('users').update({'avatar_url': url}).eq('id', userId);
 
       setState(() => _user = {...?_user, 'avatar_url': url});
