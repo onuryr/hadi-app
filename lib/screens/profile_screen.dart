@@ -36,6 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   bool _loading = true;
   bool _saving = false;
   bool _editMode = false;
+  bool _isBlocked = false;
 
   bool get _isSelf {
     final current = _supabase.auth.currentUser?.id;
@@ -115,6 +116,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       _nameController.text = user['display_name'] ?? '';
       _bioController.text = user['bio'] ?? '';
 
+      bool blocked = false;
+      if (!_isSelf) {
+        try {
+          final blocks = await ReportBlockService.getMyBlocks();
+          blocked = blocks.any((b) => b['userId']?.toString() == userId);
+        } catch (_) {}
+      }
+
       setState(() {
         _user = user;
         _createdActivities = created;
@@ -122,6 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _favoriteActivities = favorites;
         _avgRating = rating.avg;
         _ratingCount = rating.count;
+        _isBlocked = blocked;
         _loading = false;
       });
     } catch (e) {
@@ -350,7 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   if (ok) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(AppLocalizations.of(context).report)),
+                      SnackBar(content: Text(AppLocalizations.of(context).reportSubmittedSnack)),
                     );
                   }
                 } else if (value == 'block') {
@@ -359,15 +369,33 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     userId: userId,
                     displayName: name,
                   );
-                  if (blocked) {
-                    if (!mounted) return;
-                    Navigator.of(context).pop();
+                  if (blocked && mounted) {
+                    setState(() => _isBlocked = true);
+                  }
+                } else if (value == 'unblock') {
+                  try {
+                    await ReportBlockService.unblockUser(userId);
+                    if (mounted) {
+                      setState(() => _isBlocked = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('$name — ${AppLocalizations.of(context).unblockedSuccess}')),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${AppLocalizations.of(context).unblockFailed}: $e')),
+                      );
+                    }
                   }
                 }
               },
               itemBuilder: (_) => [
                 PopupMenuItem(value: 'report', child: Text(l.report)),
-                PopupMenuItem(value: 'block', child: Text(l.block)),
+                if (_isBlocked)
+                  PopupMenuItem(value: 'unblock', child: Text(l.unblock))
+                else
+                  PopupMenuItem(value: 'block', child: Text(l.block)),
               ],
             ),
         ],

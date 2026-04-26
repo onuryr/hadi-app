@@ -120,8 +120,10 @@ class _InboxScreenState extends State<InboxScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: unread > 0 ? Colors.black87 : Colors.grey,
-                            fontWeight: unread > 0 ? FontWeight.w500 : FontWeight.normal,
+                            color: unread > 0
+                                ? Theme.of(context).colorScheme.onSurface
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontWeight: unread > 0 ? FontWeight.w600 : FontWeight.normal,
                           ),
                         ),
                         trailing: Column(

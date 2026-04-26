@@ -740,44 +740,35 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Tooltip(
-                                        message:
-                                            isFull ? AppLocalizations.of(context).capacityFull : '',
-                                        child: FilledButton.icon(
-                                          style: FilledButton.styleFrom(
+                                        message: isFull
+                                            ? AppLocalizations.of(context).capacityFull
+                                            : AppLocalizations.of(context).approve,
+                                        child: IconButton.filled(
+                                          style: IconButton.styleFrom(
                                             backgroundColor: Colors.green,
                                             foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 8),
                                             visualDensity: VisualDensity.compact,
-                                            tapTargetSize:
-                                                MaterialTapTargetSize.shrinkWrap,
                                           ),
-                                          onPressed: (isFull ||
-                                                  anyProcessing)
+                                          onPressed: (isFull || anyProcessing)
                                               ? null
-                                              : () => _approveParticipant(
-                                                  pUserId),
-                                          icon: const Icon(Icons.check, size: 16),
-                                          label: Text(AppLocalizations.of(context).approve),
+                                              : () => _approveParticipant(pUserId),
+                                          icon: const Icon(Icons.check, size: 18),
                                         ),
                                       ),
                                       const SizedBox(width: 6),
-                                      OutlinedButton.icon(
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.red,
-                                          side: const BorderSide(color: Colors.red),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                          visualDensity: VisualDensity.compact,
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
+                                      Tooltip(
+                                        message: AppLocalizations.of(context).reject,
+                                        child: IconButton.outlined(
+                                          style: IconButton.styleFrom(
+                                            foregroundColor: Colors.red,
+                                            side: const BorderSide(color: Colors.red),
+                                            visualDensity: VisualDensity.compact,
+                                          ),
+                                          onPressed: anyProcessing
+                                              ? null
+                                              : () => _rejectParticipant(pUserId),
+                                          icon: const Icon(Icons.close, size: 18),
                                         ),
-                                        onPressed: anyProcessing
-                                            ? null
-                                            : () =>
-                                                _rejectParticipant(pUserId),
-                                        icon: const Icon(Icons.close, size: 16),
-                                        label: Text(AppLocalizations.of(context).reject),
                                       ),
                                     ],
                                   ),
