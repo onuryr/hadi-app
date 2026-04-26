@@ -6,6 +6,12 @@ import '../l10n/app_localizations.dart';
 
 typedef MapPickerResult = ({LatLng location, String? suggestedName});
 
+class _PlaceSuggestion {
+  final LatLng latLng;
+  final String label;
+  const _PlaceSuggestion(this.latLng, this.label);
+}
+
 class MapPickerScreen extends StatefulWidget {
   final LatLng? initialLocation;
 
@@ -24,6 +30,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   bool _locating = false;
   bool _searching = false;
   final _searchController = TextEditingController();
+  List<_PlaceSuggestion> _suggestions = [];
 
   @override
   void initState() {
@@ -45,34 +52,48 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       final placemarks = await placemarkFromCoordinates(latLng.latitude, latLng.longitude);
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;
-        final parts = [p.name, p.subLocality, p.locality].where((s) => s != null && s.isNotEmpty).toSet().toList();
-        setState(() => _selectedName = parts.join(', '));
+        final parts = [p.name, p.subLocality, p.locality]
+            .where((s) => s != null && s.isNotEmpty).toSet().toList();
+        if (mounted) setState(() => _selectedName = parts.join(', '));
       }
     } catch (_) {}
+  }
+
+  String _formatPlacemark(Placemark p, String fallback) {
+    final parts = [p.name, p.street, p.subLocality, p.locality, p.country]
+        .where((s) => s != null && s.isNotEmpty)
+        .toSet()
+        .toList();
+    final label = parts.join(', ');
+    return label.isEmpty ? fallback : label;
   }
 
   Future<void> _searchPlace() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
-    setState(() => _searching = true);
+    FocusScope.of(context).unfocus();
+    setState(() { _searching = true; _suggestions = []; });
     try {
       final locations = await locationFromAddress(query);
-      if (locations.isNotEmpty) {
-        final loc = locations.first;
-        final latLng = LatLng(loc.latitude, loc.longitude);
-        setState(() {
-          _selectedLocation = latLng;
-          _selectedName = query;
-        });
-        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
-        _reverseGeocode(latLng);
-      } else {
+      if (locations.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context).placeNotFound)),
           );
         }
+        return;
       }
+      final results = await Future.wait(locations.take(8).map((loc) async {
+        final ll = LatLng(loc.latitude, loc.longitude);
+        try {
+          final pms = await placemarkFromCoordinates(loc.latitude, loc.longitude);
+          if (pms.isNotEmpty) {
+            return _PlaceSuggestion(ll, _formatPlacemark(pms.first, query));
+          }
+        } catch (_) {}
+        return _PlaceSuggestion(ll, query);
+      }));
+      if (mounted) setState(() => _suggestions = results);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -80,8 +101,18 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         );
       }
     } finally {
-      setState(() => _searching = false);
+      if (mounted) setState(() => _searching = false);
     }
+  }
+
+  void _pickSuggestion(_PlaceSuggestion s) {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _selectedLocation = s.latLng;
+      _selectedName = s.label;
+      _suggestions = [];
+    });
+    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(s.latLng, 15));
   }
 
   Future<void> _goToCurrentLocation() async {
@@ -114,12 +145,15 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         );
       }
     } finally {
-      setState(() => _locating = false);
+      if (mounted) setState(() => _locating = false);
     }
   }
 
   void _onMapTap(LatLng latLng) {
-    setState(() => _selectedLocation = latLng);
+    setState(() {
+      _selectedLocation = latLng;
+      _suggestions = [];
+    });
     _reverseGeocode(latLng);
   }
 
@@ -155,62 +189,78 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             top: 12,
             left: 12,
             right: 12,
-            child: Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(12),
-              child: TextField(
-                controller: _searchController,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) => _searchPlace(),
-                decoration: InputDecoration(
-                  hintText: l.searchPlaceHint,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  child: TextField(
+                    controller: _searchController,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _searchPlace(),
+                    decoration: InputDecoration(
+                      hintText: l.searchPlaceHint,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: _searching
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.search),
+                              onPressed: _searchPlace,
+                            ),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _suggestions = []);
+                              },
+                            )
+                          : null,
+                    ),
+                    onChanged: (_) => setState(() {}),
                   ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  prefixIcon: _searching
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.search),
-                          onPressed: _searchPlace,
-                        ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                        )
-                      : null,
                 ),
-                onChanged: (_) => setState(() {}),
-              ),
+                if (_suggestions.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(12),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 280),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: _suggestions.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final s = _suggestions[i];
+                          return ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.place_outlined, size: 20),
+                            title: Text(s.label, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            subtitle: Text(
+                              '${s.latLng.latitude.toStringAsFixed(4)}, ${s.latLng.longitude.toStringAsFixed(4)}',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            onTap: () => _pickSuggestion(s),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (_selectedName != null)
-            Positioned(
-              bottom: 100,
-              left: 12,
-              right: 12,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(_selectedName!, maxLines: 2, overflow: TextOverflow.ellipsis)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
           Positioned(
             bottom: 24,
             right: 16,
