@@ -59,7 +59,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _handleRefresh() async {
+    if (_loading) return;
+    try {
+      await _loadProfile(showError: true);
+    } catch (_) {}
+  }
+
+  Future<void> _loadProfile({bool showError = false}) async {
     if (_supabase.auth.currentUser == null) {
       setState(() => _loading = false);
       return;
@@ -118,6 +125,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       });
     } catch (e) {
       setState(() => _loading = false);
+      if (showError && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Yenilenirken bir hata oluştu.')),
+        );
+      }
     }
   }
 
@@ -210,7 +222,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Widget _buildActivityList(List<Map<String, dynamic>> activities) {
     if (activities.isEmpty) {
-      return const Center(child: Text('Henüz aktivite yok'));
+      return RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: const Center(child: Text('Henüz aktivite yok')),
+            ),
+          ),
+        ),
+      );
     }
     final sorted = [...activities]
       ..sort((a, b) {
@@ -219,49 +242,53 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         if (aPast != bPast) return aPast ? 1 : -1;
         return (b['scheduled_at'] ?? '').compareTo(a['scheduled_at'] ?? '');
       });
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: sorted.length,
-      itemBuilder: (context, index) {
-        final a = sorted[index];
-        final past = _isPast(a);
-        return ListTile(
-          leading: Icon(Icons.event, color: past ? Colors.grey : null),
-          title: Text(
-            a['title'] ?? '',
-            style: TextStyle(color: past ? Colors.grey : null),
-          ),
-          subtitle: Text(
-            '${a['location_name'] ?? ''}  •  ${_formatDate(a['scheduled_at'])}',
-            style: TextStyle(color: past ? Colors.grey : null),
-          ),
-          trailing: a['status'] == 'inactive'
-              ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text('İptal Edildi',
-                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onErrorContainer)),
-                )
-              : past
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text('Tamamlandı',
-                          style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                    )
-                  : const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: a)),
-          ),
-          onLongPress: () => _shareActivity(a),
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: sorted.length,
+        itemBuilder: (context, index) {
+          final a = sorted[index];
+          final past = _isPast(a);
+          return ListTile(
+            leading: Icon(Icons.event, color: past ? Colors.grey : null),
+            title: Text(
+              a['title'] ?? '',
+              style: TextStyle(color: past ? Colors.grey : null),
+            ),
+            subtitle: Text(
+              '${a['location_name'] ?? ''}  •  ${_formatDate(a['scheduled_at'])}',
+              style: TextStyle(color: past ? Colors.grey : null),
+            ),
+            trailing: a['status'] == 'inactive'
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('İptal Edildi',
+                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onErrorContainer)),
+                  )
+                : past
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('Tamamlandı',
+                            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      )
+                    : const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: a)),
+            ),
+            onLongPress: () => _shareActivity(a),
+          );
+        },
+      ),
     );
   }
 
