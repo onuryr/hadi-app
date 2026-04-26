@@ -136,9 +136,24 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           .from('activities')
           .update({'status': 'inactive'}).eq('id', activityId);
       if (mounted) {
+        final l = AppLocalizations.of(context);
         Navigator.of(context).pop(true);
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).activityCancelled)),
+          SnackBar(
+            content: Text(l.activityCancelled),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: l.undo,
+              onPressed: () async {
+                try {
+                  await _supabase
+                      .from('activities')
+                      .update({'status': 'active'}).eq('id', activityId);
+                } catch (_) {}
+              },
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -619,8 +634,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       ),
       body: (_loading || !_skeletonMinPassed)
           ? const ActivityDetailSkeleton()
-          : ListView(
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: ListView(
               padding: EdgeInsets.zero,
+              physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 AspectRatio(
                   aspectRatio: 16 / 9,
@@ -874,6 +892,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                   ),
                 ),
               ],
+            ),
             ),
       bottomNavigationBar: _isCreator
           ? null

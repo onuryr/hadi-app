@@ -289,6 +289,26 @@ class _HomeScreenState extends State<HomeScreen> {
         _favoriteIds.remove(activityId);
       }
     });
+    if (!mounted) return;
+    if (!isNowFavorite) {
+      final l = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l.removeFromFavorites),
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: l.undo,
+            onPressed: () async {
+              final back = await FavoritesService.toggle(activityId);
+              if (mounted && back) {
+                setState(() => _favoriteIds.add(activityId));
+              }
+            },
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _loadMore() async {

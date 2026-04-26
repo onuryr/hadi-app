@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
 import '../services/deep_link_service.dart';
+import '../services/favorites_service.dart';
 import '../services/rating_service.dart';
 import '../services/report_block_service.dart';
 import 'activity_detail_screen.dart';
@@ -266,7 +267,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     return DateTime.parse(sa).toLocal().isBefore(DateTime.now());
   }
 
-  Widget _buildActivityList(List<Map<String, dynamic>> activities) {
+  Widget _buildActivityList(List<Map<String, dynamic>> activities,
+      {String listType = 'created'}) {
     if (activities.isEmpty) {
       return RefreshIndicator(
         onRefresh: _handleRefresh,
@@ -297,7 +299,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         itemBuilder: (context, index) {
           final a = sorted[index];
           final past = _isPast(a);
-          return ListTile(
+          final tile = ListTile(
             leading: Icon(Icons.event, color: past ? Colors.grey : null),
             title: Text(
               a['title'] ?? '',
@@ -332,6 +334,87 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: a)),
             ),
             onLongPress: () => _shareActivity(a),
+          );
+
+          if (!_isSelf || past || a['status'] == 'inactive') return tile;
+          if (listType != 'created' && listType != 'favorite') return tile;
+
+          final activityId = a['id'].toString();
+          final l = AppLocalizations.of(context);
+          return Dismissible(
+            key: ValueKey('$listType-$activityId'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Icon(
+                listType == 'favorite' ? Icons.heart_broken : Icons.delete_outline,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+            ),
+            onDismissed: (_) async {
+              final removed = a;
+              setState(() {
+                if (listType == 'favorite') {
+                  _favoriteActivities.removeWhere((x) => x['id'].toString() == activityId);
+                } else {
+                  _createdActivities.removeWhere((x) => x['id'].toString() == activityId);
+                }
+              });
+              try {
+                if (listType == 'favorite') {
+                  await FavoritesService.toggle(activityId);
+                } else {
+                  await _supabase
+                      .from('activities')
+                      .update({'status': 'inactive'}).eq('id', activityId);
+                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(listType == 'favorite'
+                        ? l.removeFromFavorites
+                        : l.activityCancelled),
+                    duration: const Duration(seconds: 4),
+                    action: SnackBarAction(
+                      label: l.undo,
+                      onPressed: () async {
+                        try {
+                          if (listType == 'favorite') {
+                            await FavoritesService.toggle(activityId);
+                            if (mounted) {
+                              setState(() => _favoriteActivities.insert(0, removed));
+                            }
+                          } else {
+                            await _supabase
+                                .from('activities')
+                                .update({'status': 'active'}).eq('id', activityId);
+                            if (mounted) {
+                              setState(() => _createdActivities.insert(0, removed));
+                            }
+                          }
+                        } catch (_) {}
+                      },
+                    ),
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                setState(() {
+                  if (listType == 'favorite') {
+                    _favoriteActivities.insert(0, removed);
+                  } else {
+                    _createdActivities.insert(0, removed);
+                  }
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${l.error}: $e')),
+                );
+              }
+            },
+            child: tile,
           );
         },
       ),
@@ -406,14 +489,43 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   );
                   if (blocked && mounted) {
                     setState(() => _isBlocked = true);
+                    final l = AppLocalizations.of(context);
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l.userBlockedSnack(name)),
+                        action: SnackBarAction(
+                          label: l.undo,
+                          onPressed: () async {
+                            try {
+                              await ReportBlockService.unblockUser(userId);
+                              if (mounted) setState(() => _isBlocked = false);
+                            } catch (_) {}
+                          },
+                        ),
+                      ),
+                    );
                   }
                 } else if (value == 'unblock') {
                   try {
                     await ReportBlockService.unblockUser(userId);
                     if (mounted) {
                       setState(() => _isBlocked = false);
+                      final l = AppLocalizations.of(context);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('$name — ${AppLocalizations.of(context).unblockedSuccess}')),
+                        SnackBar(
+                          content: Text('$name — ${l.unblockedSuccess}'),
+                          action: SnackBarAction(
+                            label: l.undo,
+                            onPressed: () async {
+                              try {
+                                await ReportBlockService.blockUser(userId);
+                                if (mounted) setState(() => _isBlocked = true);
+                              } catch (_) {}
+                            },
+                          ),
+                        ),
                       );
                     }
                   } catch (e) {
@@ -546,9 +658,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildActivityList(_createdActivities),
-                      _buildActivityList(_joinedActivities),
-                      if (_isSelf) _buildActivityList(_favoriteActivities),
+                      _buildActivityList(_createdActivities, listType: 'created'),
+                      _buildActivityList(_joinedActivities, listType: 'joined'),
+                      if (_isSelf) _buildActivityList(_favoriteActivities, listType: 'favorite'),
                     ],
                   ),
                 ),

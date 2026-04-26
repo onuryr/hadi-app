@@ -266,6 +266,8 @@ class AppLocalizations {
   String get photoUpdated => _t('Fotoğraf güncellendi', 'Photo updated');
   String get cropPhotoTitle => _t('Fotoğrafı Düzenle', 'Crop Photo');
   String get done => _t('Bitti', 'Done');
+  String get undo => _t('Geri Al', 'Undo');
+  String get removeFromFavorites => _t('Favorilerden çıkarıldı', 'Removed from favorites');
   String get photoUploadFailed => _t('Fotoğraf yüklenemedi', 'Could not upload photo');
   String ratingsCount(int count) => _t('$count değerlendirme', '$count ratings');
   String get aboutMeEmptySelf => _t('Hakkımda kısmı boş', 'Bio is empty');
