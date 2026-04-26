@@ -107,33 +107,71 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     if (updated == true) await _loadData();
   }
 
-  Future<void> _cancelActivity() async {
-    HapticFeedback.heavyImpact();
-    final confirmed = await showDialog<bool>(
+  Future<({bool confirmed, String? reason})> _confirmWithReason({
+    required String title,
+    required String content,
+    required String confirmLabel,
+    required String cancelLabel,
+  }) async {
+    final reasonController = TextEditingController();
+    final l = AppLocalizations.of(context);
+    final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).cancelDialogTitle),
-        content: Text(AppLocalizations.of(context).cancelDialogContent),
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(content),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              maxLines: 2,
+              maxLength: 200,
+              decoration: InputDecoration(
+                labelText: l.reasonOptional,
+                helperText: l.reasonHelpCancel,
+                border: const OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(AppLocalizations.of(context).giveUp),
+            child: Text(cancelLabel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(AppLocalizations.of(context).cancelIt, style: const TextStyle(color: Color(0xFFB3261E))),
+            child: Text(confirmLabel, style: const TextStyle(color: Color(0xFFB3261E))),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
+    final reason = reasonController.text.trim();
+    reasonController.dispose();
+    return (confirmed: result == true, reason: reason.isEmpty ? null : reason);
+  }
+
+  Future<void> _cancelActivity() async {
+    HapticFeedback.heavyImpact();
+    final l = AppLocalizations.of(context);
+    final res = await _confirmWithReason(
+      title: l.cancelDialogTitle,
+      content: l.cancelDialogContent,
+      confirmLabel: l.cancelIt,
+      cancelLabel: l.giveUp,
+    );
+    if (!res.confirmed) return;
 
     setState(() => _cancelling = true);
     try {
       final activityId = widget.activity['id'];
       final title = _fullActivity['title'] ?? '';
-      await NotificationService.notifyActivityDeleted(
-          activityId.toString(), title);
+      await NotificationService.notifyActivityCancelled(
+          activityId.toString(), title, reason: res.reason);
       await _supabase
           .from('activities')
           .update({'status': 'inactive'}).eq('id', activityId);
@@ -170,30 +208,21 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
 
   Future<void> _deleteActivity() async {
     HapticFeedback.heavyImpact();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(AppLocalizations.of(context).deleteDialogTitle),
-        content: Text(AppLocalizations.of(context).deleteDialogContent),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(AppLocalizations.of(context).cancel)),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(AppLocalizations.of(context).delete, style: const TextStyle(color: Color(0xFFB3261E))),
-          ),
-        ],
-      ),
+    final l = AppLocalizations.of(context);
+    final res = await _confirmWithReason(
+      title: l.deleteDialogTitle,
+      content: l.deleteDialogContent,
+      confirmLabel: l.delete,
+      cancelLabel: l.cancel,
     );
-    if (confirmed != true) return;
+    if (!res.confirmed) return;
 
     setState(() => _deleting = true);
     try {
       final activityId = widget.activity['id'];
       final title = _fullActivity['title'] ?? '';
       await NotificationService.notifyActivityDeleted(
-          activityId.toString(), title);
+          activityId.toString(), title, reason: res.reason);
       await _supabase
           .from('activity_participants')
           .delete()

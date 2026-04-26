@@ -37,8 +37,17 @@ class NotificationService {
   static Future<void> notifyActivityLeft(String activityId, String userName) =>
       _post('/api/activities/$activityId/notify-left', {'userName': userName});
 
-  static Future<void> notifyActivityDeleted(String activityId, String title) =>
-      _post('/api/activities/$activityId/notify-deleted', {'title': title});
+  static Future<void> notifyActivityDeleted(String activityId, String title, {String? reason}) =>
+      _post('/api/activities/$activityId/notify-deleted', {
+        'title': title,
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+      });
+
+  static Future<void> notifyActivityCancelled(String activityId, String title, {String? reason}) =>
+      _post('/api/activities/$activityId/notify-cancelled', {
+        'title': title,
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+      });
 
   static Future<void> notifyNewMessage({
     required String activityId,
