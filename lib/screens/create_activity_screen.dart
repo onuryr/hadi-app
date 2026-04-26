@@ -137,25 +137,30 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final initial = _scheduledAt.isBefore(now) ? now : _scheduledAt;
     final date = await showDatePicker(
       context: context,
-      initialDate: _scheduledAt,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initial,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: now.add(const Duration(days: 365)),
     );
-    if (date != null) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_scheduledAt),
-      );
-      if (time != null) {
-        setState(() {
-          _scheduledAt = DateTime(
-            date.year, date.month, date.day, time.hour, time.minute,
-          );
-        });
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null) return;
+    final picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (picked.isBefore(DateTime.now())) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).pastDateNotAllowed)),
+        );
       }
+      return;
     }
+    setState(() => _scheduledAt = picked);
   }
 
   Future<void> _createActivity() async {

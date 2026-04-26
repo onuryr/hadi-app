@@ -269,6 +269,7 @@ class AppLocalizations {
   String get undo => _t('Geri Al', 'Undo');
   String get removeFromFavorites => _t('Favorilerden çıkarıldı', 'Removed from favorites');
   String get somethingWentWrong => _t('Bir şeyler ters gitti.', 'Something went wrong.');
+  String get pastDateNotAllowed => _t('Geçmiş tarih ve saat seçemezsin', 'Past date and time not allowed');
   String get photoUploadFailed => _t('Fotoğraf yüklenemedi', 'Could not upload photo');
   String ratingsCount(int count) => _t('$count değerlendirme', '$count ratings');
   String get aboutMeEmptySelf => _t('Hakkımda kısmı boş', 'Bio is empty');
