@@ -226,14 +226,16 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     controller: _searchController,
                     textInputAction: TextInputAction.search,
                     onSubmitted: (_) => _searchPlace(),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                     decoration: InputDecoration(
                       hintText: l.searchPlaceHint,
+                      hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Theme.of(context).colorScheme.surface,
                       prefixIcon: _searching
                           ? const Padding(
                               padding: EdgeInsets.all(12),
