@@ -742,25 +742,42 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                       Tooltip(
                                         message:
                                             isFull ? AppLocalizations.of(context).capacityFull : '',
-                                        child: TextButton(
-                                          style: TextButton.styleFrom(
-                                              foregroundColor: Colors.green),
+                                        child: FilledButton.icon(
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 8),
+                                            visualDensity: VisualDensity.compact,
+                                            tapTargetSize:
+                                                MaterialTapTargetSize.shrinkWrap,
+                                          ),
                                           onPressed: (isFull ||
                                                   anyProcessing)
                                               ? null
                                               : () => _approveParticipant(
                                                   pUserId),
-                                          child: Text(AppLocalizations.of(context).approve),
+                                          icon: const Icon(Icons.check, size: 16),
+                                          label: Text(AppLocalizations.of(context).approve),
                                         ),
                                       ),
-                                      TextButton(
-                                        style: TextButton.styleFrom(
-                                            foregroundColor: Colors.red),
+                                      const SizedBox(width: 6),
+                                      OutlinedButton.icon(
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                          side: const BorderSide(color: Colors.red),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 8),
+                                          visualDensity: VisualDensity.compact,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
                                         onPressed: anyProcessing
                                             ? null
                                             : () =>
                                                 _rejectParticipant(pUserId),
-                                        child: Text(AppLocalizations.of(context).reject),
+                                        icon: const Icon(Icons.close, size: 16),
+                                        label: Text(AppLocalizations.of(context).reject),
                                       ),
                                     ],
                                   ),
