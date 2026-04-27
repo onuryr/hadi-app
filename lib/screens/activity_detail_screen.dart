@@ -282,7 +282,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         ratedUserId: ratedUserId,
         rating: rating,
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Rating save failed: $e');
       if (mounted) {
         setState(() {
           if (prev == null) {
@@ -292,7 +293,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           }
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).ratingSaveFailed)),
+          SnackBar(content: Text('${AppLocalizations.of(context).ratingSaveFailed}: $e')),
         );
       }
     }
