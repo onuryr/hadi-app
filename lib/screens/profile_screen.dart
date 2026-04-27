@@ -77,7 +77,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final percent = _profileCompletion();
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
@@ -651,11 +650,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
+          : NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
                     children: [
                       GestureDetector(
                         onTap: _isSelf ? _pickAndUploadAvatar : null,
@@ -743,32 +743,60 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                 textAlign: TextAlign.center,
                               );
                             }),
-                    ],
+                        if (_isSelf && _profileCompletion() < 100) ...[
+                          const SizedBox(height: 16),
+                          _buildCompletionBanner(),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
-                if (_isSelf && _profileCompletion() < 100) _buildCompletionBanner(),
-                TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabs: [
-                    Tab(text: '${l.createdActivities} (${_createdActivities.length})'),
-                    Tab(text: '${l.joinedActivities} (${_joinedActivities.length})'),
-                    if (_isSelf)
-                      Tab(text: '${l.favorites} (${_favoriteActivities.length})'),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildActivityList(_createdActivities, listType: 'created'),
-                      _buildActivityList(_joinedActivities, listType: 'joined'),
-                      if (_isSelf) _buildActivityList(_favoriteActivities, listType: 'favorite'),
-                    ],
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _StickyTabBarDelegate(
+                    TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabs: [
+                        Tab(text: '${l.createdActivities} (${_createdActivities.length})'),
+                        Tab(text: '${l.joinedActivities} (${_joinedActivities.length})'),
+                        if (_isSelf)
+                          Tab(text: '${l.favorites} (${_favoriteActivities.length})'),
+                      ],
+                    ),
+                    background: Theme.of(context).colorScheme.surface,
                   ),
                 ),
               ],
+              body: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildActivityList(_createdActivities, listType: 'created'),
+                  _buildActivityList(_joinedActivities, listType: 'joined'),
+                  if (_isSelf) _buildActivityList(_favoriteActivities, listType: 'favorite'),
+                ],
+              ),
             ),
     );
   }
+}
+
+class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+  final Color background;
+  _StickyTabBarDelegate(this.tabBar, {required this.background});
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Material(color: background, elevation: overlapsContent ? 2 : 0, child: tabBar);
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickyTabBarDelegate oldDelegate) =>
+      tabBar != oldDelegate.tabBar || background != oldDelegate.background;
 }
