@@ -781,7 +781,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
+            child: Column(
+              children: [
+            Row(
               children: [
                 Expanded(
                   child: ActionChip(
@@ -915,7 +917,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
                 Expanded(
                   child: ActionChip(
                     visualDensity: VisualDensity.compact,
@@ -1033,6 +1039,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 ),
+              ],
+            ),
               ],
             ),
           ),

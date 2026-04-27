@@ -35,14 +35,28 @@ class _FollowListScreenState extends State<FollowListScreen> {
       final otherCol = widget.mode == FollowListMode.followers ? 'follower_id' : 'followee_id';
       final rows = await _supabase
           .from('follows')
-          .select('$otherCol, users!follows_${otherCol}_fkey(id, display_name, avatar_url)')
+          .select('$otherCol, created_at')
           .eq(selfCol, widget.userId)
           .order('created_at', ascending: false);
-      final list = (rows as List)
-          .map<Map<String, dynamic>>((r) {
-            final u = r['users'] as Map<String, dynamic>?;
-            return u ?? {'id': r[otherCol]};
-          })
+      final ids = (rows as List)
+          .map((r) => r[otherCol]?.toString())
+          .whereType<String>()
+          .toList();
+      if (ids.isEmpty) {
+        if (mounted) setState(() { _items = []; _loading = false; });
+        return;
+      }
+      final users = await _supabase
+          .from('users')
+          .select('id, display_name, avatar_url')
+          .inFilter('id', ids);
+      final byId = {
+        for (final u in users) u['id'].toString(): u
+      };
+      // Preserve follow-time order
+      final list = ids
+          .map((id) => byId[id])
+          .whereType<Map<String, dynamic>>()
           .toList();
       if (mounted) setState(() { _items = list; _loading = false; });
     } catch (e) {
