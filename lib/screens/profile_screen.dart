@@ -756,7 +756,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   delegate: _StickyTabBarDelegate(
                     TabBar(
                       controller: _tabController,
-                      isScrollable: true,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      unselectedLabelStyle: const TextStyle(fontSize: 13),
                       tabs: [
                         Tab(text: '${l.createdActivities} (${_createdActivities.length})'),
                         Tab(text: '${l.joinedActivities} (${_joinedActivities.length})'),
