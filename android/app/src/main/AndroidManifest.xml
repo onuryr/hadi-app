@@ -47,7 +47,7 @@
             android:value="2" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDYiqZfCyLECnr2Gr_fLGyqCjq7AuuYz5Q"/>
+            android:value="${mapsApiKey}"/>
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:screenOrientation="portrait"
