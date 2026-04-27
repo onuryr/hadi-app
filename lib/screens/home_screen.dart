@@ -458,6 +458,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _surpriseMe() async {
+    final myId = _supabase.auth.currentUser?.id;
+    Set<String> myActivityIds = {};
+    if (myId != null) {
+      try {
+        final rows = await _supabase
+            .from('activity_participants')
+            .select('activity_id')
+            .eq('user_id', myId);
+        myActivityIds = rows
+            .map<String>((r) => r['activity_id'].toString())
+            .toSet();
+      } catch (_) {}
+    }
     final pool = _activities
         .where((a) => a['status'] != 'inactive')
         .where((a) {
@@ -465,6 +478,7 @@ class _HomeScreenState extends State<HomeScreen> {
           if (sa == null) return true;
           return DateTime.parse(sa).toLocal().isAfter(DateTime.now());
         })
+        .where((a) => !myActivityIds.contains(a['id'].toString()))
         .toList();
     if (pool.isEmpty) {
       if (!mounted) return;
