@@ -18,15 +18,17 @@ class StarRating extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cell = size + 4;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(max, (i) {
         final filled = i < value;
         return SizedBox(
-          width: 48,
-          height: 48,
+          width: cell,
+          height: cell,
           child: Center(
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: onChanged == null ? null : () => onChanged!(i + 1),
               child: Icon(
                 filled ? Icons.star : Icons.star_border,

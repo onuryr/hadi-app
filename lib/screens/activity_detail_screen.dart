@@ -603,7 +603,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               ),
               StarRating(
                 value: myRating,
-                size: 22,
+                size: 20,
                 onChanged: (r) => _rateUser(userId, r),
               ),
             ],
