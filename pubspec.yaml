@@ -55,6 +55,7 @@ dependencies:
   flutter_svg: ^2.0.10
   google_fonts: ^6.2.1
   image_cropper: ^9.1.0
+  google_maps_cluster_manager_2: ^3.1.0
 
 # share_plus 13.x requires win32 ^6.x but geolocator_linux (via package_info_plus)
 # requires win32 <6.x. win32 is Windows-only so forcing 6.x is safe for our Android target.

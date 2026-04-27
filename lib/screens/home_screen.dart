@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_cluster_manager_2/google_maps_cluster_manager_2.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +24,7 @@ import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/category_defaults.dart';
 import '../widgets/activity_card_skeleton.dart';
+import '../widgets/clustered_activities_map.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -79,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   RealtimeChannel? _messageChannel;
   String? _myAvatarUrl;
+  List<Map<String, dynamic>> _trending = [];
 
   @override
   void initState() {
@@ -183,6 +186,37 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<List<Map<String, dynamic>>> _fetchTrending() async {
+    if (_cachedLat == null) return [];
+    final params = {
+      'lat': _cachedLat.toString(),
+      'lng': _cachedLng.toString(),
+      'radiusKm': '50',
+      'limit': '8',
+    };
+    final uri = Uri.parse('$_apiBase/api/activities/trending').replace(queryParameters: params);
+    final response = await http.get(uri).timeout(const Duration(seconds: 10));
+    if (response.statusCode != 200) return [];
+    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    return data.map<Map<String, dynamic>>((item) => {
+      'id': item['id'],
+      'title': item['title'],
+      'location_name': item['locationName'],
+      'scheduled_at': item['scheduledAt'],
+      'max_participants': item['maxParticipants'],
+      'distance_km': item['distanceKm'],
+      'participant_count': item['participantCount'],
+      'category_name': item['categoryName'],
+      'creator_name': item['creatorName'],
+      'creator_rating_avg': item['creatorRatingAvg'],
+      'creator_rating_count': item['creatorRatingCount'],
+      'lat': item['lat'],
+      'lng': item['lng'],
+      'image_url': item['imageUrl'],
+      'category_id': categoryNameToId[item['categoryName'] as String? ?? ''],
+    }).toList();
+  }
+
   Future<(List<Map<String, dynamic>>, bool)> _fetchPage(int page) async {
     if (_cachedLat == null) {
       final position = await _getLocation();
@@ -246,6 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loading = false;
       });
       _refreshUnread();
+      _loadTrending();
     } catch (e) {
       final elapsed = DateTime.now().difference(loadStart);
       if (elapsed < const Duration(milliseconds: 300)) {
@@ -326,6 +361,101 @@ class _HomeScreenState extends State<HomeScreen> {
         'next_week' => l.whenNextWeek,
         _ => l.whenLabel,
       };
+
+  Widget _buildTrendingShelf() {
+    final l = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🔥', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
+              Text(l.trendingToday,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 200,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _trending.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, i) {
+                final a = _trending[i];
+                final imageUrl = activityImageUrl(
+                  imageUrl: a['image_url'],
+                  categoryId: a['category_id'],
+                );
+                return SizedBox(
+                  width: 220,
+                  child: Card(
+                    clipBehavior: Clip.antiAlias,
+                    margin: EdgeInsets.zero,
+                    child: InkWell(
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ActivityDetailScreen(activity: a),
+                          ),
+                        );
+                        _onRefresh();
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(color: Colors.grey.shade200),
+                              errorWidget: (_, __, ___) => Container(color: Colors.grey.shade200),
+                            ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    a['title'] ?? '',
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '👥 ${a['participant_count'] ?? 0}/${a['max_participants'] ?? '?'}',
+                                    style: const TextStyle(fontSize: 12, color: Color(0xFF616161)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _loadTrending() async {
+    try {
+      final t = await _fetchTrending();
+      if (mounted) setState(() => _trending = t);
+    } catch (_) {}
+  }
 
   Future<void> _surpriseMe() async {
     final pool = _activities
@@ -424,30 +554,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMapView() {
-    final markers = <Marker>{};
-    for (final a in _activities) {
-      final lat = a['lat'];
-      final lng = a['lng'];
-      if (lat == null || lng == null) continue;
-      markers.add(Marker(
-        markerId: MarkerId(a['id'].toString()),
-        position: LatLng((lat as num).toDouble(), (lng as num).toDouble()),
-        infoWindow: InfoWindow(
-          title: a['title'] ?? '',
-          snippet: '${a['category_name'] ?? ''} • ${_formatDistance(a['distance_km'])}',
-          onTap: () => _showActivitySheet(a),
-        ),
-        onTap: () => _showActivitySheet(a),
-      ));
-    }
     final center = _cachedLat != null && _cachedLng != null
         ? LatLng(_cachedLat!, _cachedLng!)
         : const LatLng(41.0082, 29.0234);
-    return GoogleMap(
-      initialCameraPosition: CameraPosition(target: center, zoom: 12),
-      markers: markers,
-      myLocationEnabled: true,
-      myLocationButtonEnabled: true,
+    return ClusteredActivitiesMap(
+      activities: _applyWhenFilter(_activities),
+      initialCenter: center,
+      onMarkerTap: _showActivitySheet,
+      formatDistance: _formatDistance,
     );
   }
 
@@ -957,19 +1071,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                   );
                                 }
                                 final showLoadMore = _whenFilter == 'all' && _hasMore;
+                                final showShelf = _trending.isNotEmpty && _whenFilter == 'all' && _searchQuery.isEmpty;
+                                final shelfOffset = showShelf ? 1 : 0;
                                 return ListView.builder(
                                     controller: _scrollController,
                                     physics: const AlwaysScrollableScrollPhysics(),
                                     padding: const EdgeInsets.symmetric(vertical: 8),
-                                    itemCount: filtered.length + (showLoadMore ? 1 : 0),
+                                    itemCount: filtered.length + shelfOffset + (showLoadMore ? 1 : 0),
                                     itemBuilder: (context, index) {
-                                      if (index == filtered.length) {
+                                      if (showShelf && index == 0) {
+                                        return _buildTrendingShelf();
+                                      }
+                                      final dataIndex = index - shelfOffset;
+                                      if (dataIndex == filtered.length) {
                                         return const Padding(
                                           padding: EdgeInsets.all(16),
                                           child: Center(child: CircularProgressIndicator()),
                                         );
                                       }
-                                      final activity = filtered[index];
+                                      final activity = filtered[dataIndex];
                                       final imageUrl = activityImageUrl(
                                         imageUrl: activity['image_url'],
                                         categoryId: activity['category_id'],

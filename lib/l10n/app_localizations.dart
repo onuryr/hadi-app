@@ -284,6 +284,10 @@ class AppLocalizations {
   String get whenTonight => _t('Bu akşam', 'Tonight');
   String get whenWeekend => _t('Hafta sonu', 'Weekend');
   String get whenNextWeek => _t('Önümüzdeki hafta', 'Next week');
+  String get follow => _t('Takip Et', 'Follow');
+  String get following => _t('Takipte', 'Following');
+  String get followFailed => _t('Takip işlemi başarısız', 'Follow failed');
+  String get trendingToday => _t('Bugün Popüler', 'Trending Today');
   String get photoUploadFailed => _t('Fotoğraf yüklenemedi', 'Could not upload photo');
   String ratingsCount(int count) => _t('$count değerlendirme', '$count ratings');
   String get aboutMeEmptySelf => _t('Hakkımda kısmı boş', 'Bio is empty');

@@ -28,6 +28,17 @@ class NotificationService {
     } catch (_) {}
   }
 
+  static Future<void> _delete(String path) async {
+    try {
+      final token = Supabase.instance.client.auth.currentSession?.accessToken;
+      if (token == null) return;
+      await http.delete(
+        Uri.parse('$_apiBase$path'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 5));
+    } catch (_) {}
+  }
+
   static Future<void> notifyActivityUpdated(String activityId, String title, {String? changes}) =>
       _post('/api/activities/$activityId/notify-updated', {'title': title, 'changes': changes});
 
@@ -48,6 +59,15 @@ class NotificationService {
         'title': title,
         if (reason != null && reason.isNotEmpty) 'reason': reason,
       });
+
+  static Future<void> notifyFollowersOfNewActivity(String activityId, String title) =>
+      _post('/api/activities/$activityId/notify-followers', {'title': title});
+
+  static Future<void> followUser(String userId) =>
+      _post('/api/users/$userId/follow', const {});
+
+  static Future<void> unfollowUser(String userId) =>
+      _delete('/api/users/$userId/follow');
 
   static Future<void> notifyNewMessage({
     required String activityId,

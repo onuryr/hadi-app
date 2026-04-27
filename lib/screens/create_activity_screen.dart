@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -235,6 +236,12 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
           _titleController.text.trim(),
           changes: changes,
         );
+      } else {
+        // Notify followers about the new activity (fire-and-forget)
+        unawaited(NotificationService.notifyFollowersOfNewActivity(
+          activityId,
+          _titleController.text.trim(),
+        ));
       }
 
       if (mounted) {

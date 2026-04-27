@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
 import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
+import '../services/notification_service.dart';
 import '../services/rating_service.dart';
 import '../services/report_block_service.dart';
 import 'activity_detail_screen.dart';
@@ -40,6 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   bool _saving = false;
   bool _editMode = false;
   bool _isBlocked = false;
+  bool _isFollowing = false;
+  bool _followBusy = false;
 
   bool get _isSelf {
     final current = _supabase.auth.currentUser?.id;
@@ -62,6 +65,32 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _nameController.dispose();
     _bioController.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleFollow() async {
+    if (_followBusy) return;
+    HapticFeedback.selectionClick();
+    final wasFollowing = _isFollowing;
+    setState(() {
+      _followBusy = true;
+      _isFollowing = !wasFollowing;
+    });
+    try {
+      if (wasFollowing) {
+        await NotificationService.unfollowUser(_viewedUserId);
+      } else {
+        await NotificationService.followUser(_viewedUserId);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isFollowing = wasFollowing);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).followFailed)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _followBusy = false);
+    }
   }
 
   int _profileCompletion() {
@@ -181,10 +210,23 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       _bioController.text = user['bio'] ?? '';
 
       bool blocked = false;
+      bool following = false;
       if (!_isSelf) {
         try {
           final blocks = await ReportBlockService.getMyBlocks();
           blocked = blocks.any((b) => b['userId']?.toString() == userId);
+        } catch (_) {}
+        try {
+          final myId = _supabase.auth.currentUser?.id;
+          if (myId != null) {
+            final exists = await _supabase
+                .from('follows')
+                .select('follower_id')
+                .eq('follower_id', myId)
+                .eq('followee_id', userId)
+                .maybeSingle();
+            following = exists != null;
+          }
         } catch (_) {}
       }
 
@@ -196,6 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _avgRating = rating.avg;
         _ratingCount = rating.count;
         _isBlocked = blocked;
+        _isFollowing = following;
         _loading = false;
       });
     } catch (e) {
@@ -563,6 +606,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ],
             ),
           ],
+          if (!_isSelf && !_loading)
+            TextButton.icon(
+              onPressed: _followBusy ? null : _toggleFollow,
+              icon: Icon(_isFollowing ? Icons.person_remove : Icons.person_add_alt_1, size: 18),
+              label: Text(_isFollowing ? l.following : l.follow),
+              style: TextButton.styleFrom(
+                foregroundColor: _isFollowing
+                    ? Theme.of(context).colorScheme.onSurfaceVariant
+                    : Theme.of(context).colorScheme.primary,
+              ),
+            ),
           if (!_isSelf && !_loading)
             PopupMenuButton<String>(
               onSelected: (value) async {
