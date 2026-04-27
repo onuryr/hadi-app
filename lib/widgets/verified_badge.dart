@@ -10,7 +10,7 @@ class VerifiedBadge extends StatelessWidget {
       message: 'Doğrulanmış',
       child: Icon(
         Icons.verified_rounded,
-        color: const Color(0xFF1D9BF0),
+        color: const Color(0xFF673AB7),
         size: size,
       ),
     );
