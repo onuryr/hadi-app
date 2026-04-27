@@ -28,8 +28,8 @@ class DeepLinkService {
     String? activityId;
     if (uri.scheme == 'hadi' && uri.host == 'activity' && uri.pathSegments.isNotEmpty) {
       activityId = uri.pathSegments.first;
-    } else if ((uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.endsWith('railway.app') &&
+    } else if (uri.scheme == 'https' &&
+        uri.host == 'hadi-production-e4f3.up.railway.app' &&
         uri.pathSegments.length >= 2 &&
         uri.pathSegments.first == 'a') {
       activityId = uri.pathSegments[1];
