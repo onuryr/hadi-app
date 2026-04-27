@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -283,6 +284,31 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() => _unreadCount = count);
   }
 
+  Future<void> _surpriseMe() async {
+    final pool = _activities
+        .where((a) => a['status'] != 'inactive')
+        .where((a) {
+          final sa = a['scheduled_at'];
+          if (sa == null) return true;
+          return DateTime.parse(sa).toLocal().isAfter(DateTime.now());
+        })
+        .toList();
+    if (pool.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).noActivitiesFound)),
+      );
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    final pick = pool[Random().nextInt(pool.length)];
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: pick)),
+    );
+    _onRefresh();
+  }
+
   Future<void> _toggleFavorite(String activityId) async {
     HapticFeedback.selectionClick();
     final isNowFavorite = await FavoritesService.toggle(activityId);
@@ -525,14 +551,30 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(icon: const Icon(Icons.logout), tooltip: l.signOut, onPressed: _signOut),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const CreateActivityScreen()),
-          );
-          if (result == true) _loadActivities();
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'surprise-fab',
+            tooltip: l.surpriseMe,
+            backgroundColor: const Color(0xFFFF9800),
+            foregroundColor: Colors.white,
+            onPressed: _surpriseMe,
+            child: const Icon(Icons.casino),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'create-fab',
+            onPressed: () async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CreateActivityScreen()),
+              );
+              if (result == true) _loadActivities();
+            },
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
       body: Column(
         children: [
