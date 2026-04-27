@@ -479,8 +479,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       color: Theme.of(context).colorScheme.errorContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(AppLocalizations.of(context).activityCancelled,
-                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onErrorContainer)),
+                    child: Text(AppLocalizations.of(context).activityCancelledBadge,
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onErrorContainer)),
                   )
                 : past
                     ? Container(
@@ -489,8 +489,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(AppLocalizations.of(context).activityPast,
-                            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                        child: Text(AppLocalizations.of(context).activityCompletedBadge,
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       )
                     : const Icon(Icons.chevron_right),
             onTap: () async {

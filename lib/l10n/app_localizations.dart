@@ -79,6 +79,8 @@ class AppLocalizations {
   String get deleteActivity => _t('Sil', 'Delete');
   String get editActivity => _t('Düzenle', 'Edit');
   String get activityCancelled => _t('Aktivite iptal edildi', 'Activity cancelled');
+  String get activityCancelledBadge => _t('İptal', 'Cancelled');
+  String get activityCompletedBadge => _t('Tamamlandı', 'Completed');
   String get activityDeleted => _t('Aktivite silindi', 'Activity deleted');
   String get joinedSuccessfully => _t('Aktiviteye katıldınız!', 'Joined the activity!');
   String get leftActivity => _t('Aktiviteden ayrıldınız.', 'Left the activity.');
