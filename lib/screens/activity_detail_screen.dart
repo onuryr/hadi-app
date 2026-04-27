@@ -1008,7 +1008,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
               ],
             ),
             ),
-      bottomNavigationBar: _isCreator
+      bottomNavigationBar: _isCreator || _isPast
           ? null
           : Padding(
               padding: const EdgeInsets.all(16),
