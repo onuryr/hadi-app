@@ -799,6 +799,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          const Icon(Icons.category_outlined, size: 16),
+                          const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               _selectedCategoryId == null
@@ -876,6 +878,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          const Icon(Icons.sort, size: 16),
+                          const SizedBox(width: 4),
                           Flexible(
                             child: Text(
                               sortOpts[_sortBy] ?? l.sort,
@@ -936,7 +940,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.my_location, size: 16),
+                          const Icon(Icons.radar, size: 16),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
@@ -993,7 +997,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.event, size: 16),
+                          const Icon(Icons.schedule_outlined, size: 16),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
