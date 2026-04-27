@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../services/chat_service.dart';
 import '../services/notification_service.dart';
 import '../services/report_block_service.dart';
+import '../utils/profanity_filter.dart';
 import '../widgets/error_state.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -147,6 +148,13 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+
+    if (ProfanityFilter.isProfane(text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).messageBlockedProfane)),
+      );
+      return;
+    }
 
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;

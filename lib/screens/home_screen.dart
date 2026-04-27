@@ -25,6 +25,7 @@ import '../services/favorites_service.dart';
 import '../utils/category_defaults.dart';
 import '../widgets/activity_card_skeleton.dart';
 import '../widgets/clustered_activities_map.dart';
+import '../widgets/verified_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -209,6 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'category_name': item['categoryName'],
       'creator_name': item['creatorName'],
       'creator_rating_avg': item['creatorRatingAvg'],
+      'creator_is_verified': item['creatorIsVerified'] == true,
       'creator_rating_count': item['creatorRatingCount'],
       'lat': item['lat'],
       'lng': item['lng'],
@@ -250,6 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'category_name': item['categoryName'],
       'creator_name': item['creatorName'],
       'creator_rating_avg': item['creatorRatingAvg'],
+      'creator_is_verified': item['creatorIsVerified'] == true,
       'creator_rating_count': item['creatorRatingCount'],
       'lat': item['lat'],
       'lng': item['lng'],
@@ -1233,6 +1236,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                               style: const TextStyle(fontSize: 12, color: Color(0xFF616161)),
                                                             ),
                                                           ),
+                                                          if (activity['creator_is_verified'] == true) ...[
+                                                            const SizedBox(width: 3),
+                                                            const VerifiedBadge(size: 12),
+                                                          ],
                                                           if (activity['creator_rating_count'] != null && activity['creator_rating_count'] > 0) ...[
                                                             const SizedBox(width: 6),
                                                             const Icon(Icons.star, size: 12, color: Color(0xFFFFA726)),

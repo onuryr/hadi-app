@@ -11,6 +11,7 @@ import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/error_state.dart';
+import '../widgets/verified_badge.dart';
 import '../services/rating_service.dart';
 import '../services/report_block_service.dart';
 import 'activity_detail_screen.dart';
@@ -812,9 +813,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                 border: OutlineInputBorder(),
                               ),
                             )
-                          : Text(
-                              _user?['display_name'] ?? '',
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    _user?['display_name'] ?? '',
+                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                if (_user?['is_verified'] == true) ...[
+                                  const SizedBox(width: 6),
+                                  const VerifiedBadge(size: 20),
+                                ],
+                              ],
                             ),
                       if (!_editMode && _ratingCount > 0) ...[
                         const SizedBox(height: 4),

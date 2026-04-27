@@ -292,6 +292,7 @@ class AppLocalizations {
   String get followingTitle => _t('Takip Edilen', 'Following');
   String get noFollowers => _t('Henüz takipçi yok', 'No followers yet');
   String get noFollowing => _t('Kimseyi takip etmiyor', 'Not following anyone yet');
+  String get messageBlockedProfane => _t('Bu mesaj uygunsuz içerik içerdiği için gönderilemedi', 'Message blocked for inappropriate content');
   String get photoUploadFailed => _t('Fotoğraf yüklenemedi', 'Could not upload photo');
   String ratingsCount(int count) => _t('$count değerlendirme', '$count ratings');
   String get aboutMeEmptySelf => _t('Hakkımda kısmı boş', 'Bio is empty');

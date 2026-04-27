@@ -17,6 +17,7 @@ import '../services/report_block_service.dart';
 import '../utils/category_defaults.dart';
 import '../widgets/activity_detail_skeleton.dart';
 import '../widgets/star_rating.dart';
+import '../widgets/verified_badge.dart';
 import 'chat_screen.dart';
 import 'create_activity_screen.dart';
 import 'profile_screen.dart';
@@ -341,7 +342,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     try {
       final data = await _supabase
           .from('activity_participants')
-          .select('user_id, status, users(display_name, avatar_url)')
+          .select('user_id, status, users(display_name, avatar_url, is_verified)')
           .eq('activity_id', widget.activity['id']);
 
       if (mounted) {
@@ -891,6 +892,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             p['users']?['avatar_url'] as String?;
                         final isCreator =
                             p['user_id'] == _fullActivity['creator_id'];
+                        final isVerified = p['users']?['is_verified'] == true;
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: CircleAvatar(
@@ -903,7 +905,16 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                     : '?')
                                 : null,
                           ),
-                          title: Text(name),
+                          title: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(child: Text(name, overflow: TextOverflow.ellipsis)),
+                              if (isVerified) ...[
+                                const SizedBox(width: 4),
+                                const VerifiedBadge(size: 16),
+                              ],
+                            ],
+                          ),
                           subtitle: isCreator &&
                                   _creatorRating != null &&
                                   _creatorRating!.count > 0
