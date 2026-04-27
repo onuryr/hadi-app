@@ -291,6 +291,10 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         ratedUserId: ratedUserId,
         rating: rating,
       );
+      // Refresh creator rating immediately if we just rated the organizer
+      if (ratedUserId == _fullActivity['creator_id']) {
+        _loadCreatorRating();
+      }
     } catch (e) {
       debugPrint('Rating save failed: $e');
       if (mounted) {
@@ -571,26 +575,38 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
         final name = p['users']?['display_name'] ?? AppLocalizations.of(context).unknownUser;
         final avatarUrl = p['users']?['avatar_url'] as String?;
         final myRating = _myRatings[userId] ?? 0;
-        return ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: CircleAvatar(
-            backgroundImage:
-                avatarUrl != null ? CachedNetworkImageProvider(avatarUrl) : null,
-            child: avatarUrl == null
-                ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?')
-                : null,
-          ),
-          title: Text(name),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: StarRating(
-              value: myRating,
-              size: 24,
-              onChanged: (r) => _rateUser(userId, r),
-            ),
-          ),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId)),
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId)),
+                ),
+                child: CircleAvatar(
+                  backgroundImage: avatarUrl != null
+                      ? CachedNetworkImageProvider(avatarUrl)
+                      : null,
+                  child: avatarUrl == null
+                      ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?')
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+              StarRating(
+                value: myRating,
+                size: 22,
+                onChanged: (r) => _rateUser(userId, r),
+              ),
+            ],
           ),
         );
       }),
