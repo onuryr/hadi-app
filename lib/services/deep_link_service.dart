@@ -21,13 +21,20 @@ class DeepLinkService {
     }
   }
 
-  static String activityUrl(String activityId) => 'hadi://activity/$activityId';
+  static String activityUrl(String activityId) =>
+      'https://hadi-production-e4f3.up.railway.app/a/$activityId';
 
   static Future<void> _handle(Uri uri) async {
-    if (uri.scheme != 'hadi' || uri.host != 'activity') return;
-    final segments = uri.pathSegments;
-    if (segments.isEmpty) return;
-    final activityId = segments.first;
+    String? activityId;
+    if (uri.scheme == 'hadi' && uri.host == 'activity' && uri.pathSegments.isNotEmpty) {
+      activityId = uri.pathSegments.first;
+    } else if ((uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.endsWith('railway.app') &&
+        uri.pathSegments.length >= 2 &&
+        uri.pathSegments.first == 'a') {
+      activityId = uri.pathSegments[1];
+    }
+    if (activityId == null) return;
     try {
       final data = await Supabase.instance.client
           .from('activities')
