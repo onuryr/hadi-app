@@ -431,10 +431,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ElevatedButton(
                 onPressed: () async {
                   Navigator.of(ctx).pop();
-                  final deleted = await Navigator.of(context).push<bool>(
+                  await Navigator.of(context).push<bool>(
                     MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: activity)),
                   );
-                  if (deleted == true) _loadActivities();
+                  _onRefresh();
                 },
                 child: Text(l.viewDetails),
               ),
@@ -829,12 +829,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                         clipBehavior: Clip.antiAlias,
                                         child: InkWell(
                                           onTap: () async {
-                                            final deleted = await Navigator.of(context).push<bool>(
+                                            await Navigator.of(context).push<bool>(
                                               MaterialPageRoute(
                                                 builder: (_) => ActivityDetailScreen(activity: activity),
                                               ),
                                             );
-                                            if (deleted == true) _loadActivities();
+                                            _onRefresh();
                                           },
                                           onLongPress: () => _shareActivity(activity),
                                           child: Column(
