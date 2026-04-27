@@ -340,7 +340,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Center(child: Text(AppLocalizations.of(context).noActivitiesCreated)),
+                  child: Center(child: Text(switch (listType) {
+                    'joined' => AppLocalizations.of(context).noActivitiesJoined,
+                    'favorite' => AppLocalizations.of(context).noFavorites,
+                    _ => AppLocalizations.of(context).noActivitiesCreated,
+                  })),
             ),
           ),
         ),

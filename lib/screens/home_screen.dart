@@ -519,6 +519,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
               _loadMyAvatar();
+              _onRefresh();
             },
           ),
           IconButton(icon: const Icon(Icons.logout), tooltip: l.signOut, onPressed: _signOut),
