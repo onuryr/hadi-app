@@ -43,6 +43,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   bool _isFavorite = false;
   Map<String, int> _myRatings = {};
   String _processingUserId = '';
+  ({double avg, int count})? _creatorRating;
 
   bool get _isPast {
     final sa = _fullActivity['scheduled_at'];
@@ -264,7 +265,15 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       _loadParticipants(),
       _loadFavoriteStatus(),
       _loadMyRatings(),
+      _loadCreatorRating(),
     ]);
+  }
+
+  Future<void> _loadCreatorRating() async {
+    final creatorId = _fullActivity['creator_id']?.toString();
+    if (creatorId == null) return;
+    final r = await RatingService.getUserAverage(creatorId);
+    if (mounted) setState(() => _creatorRating = r);
   }
 
   Future<void> _loadMyRatings() async {
@@ -873,6 +882,22 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 : null,
                           ),
                           title: Text(name),
+                          subtitle: isCreator &&
+                                  _creatorRating != null &&
+                                  _creatorRating!.count > 0
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.star,
+                                        size: 14, color: Color(0xFFFFA726)),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      '${_creatorRating!.avg.toStringAsFixed(1)} · ${_creatorRating!.count}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                )
+                              : null,
                           trailing: isCreator
                               ? Container(
                                   padding: const EdgeInsets.symmetric(

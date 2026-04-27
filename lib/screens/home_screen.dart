@@ -213,6 +213,8 @@ class _HomeScreenState extends State<HomeScreen> {
       'participant_count': item['participantCount'],
       'category_name': item['categoryName'],
       'creator_name': item['creatorName'],
+      'creator_rating_avg': item['creatorRatingAvg'],
+      'creator_rating_count': item['creatorRatingCount'],
       'lat': item['lat'],
       'lng': item['lng'],
       'image_url': item['imageUrl'],
@@ -924,6 +926,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       '🕐 ${_formatDate(activity['scheduled_at'])}  👥 ${activity['participant_count'] ?? 0}/${activity['max_participants'] ?? '?'}',
                                                       style: const TextStyle(fontSize: 12, color: Color(0xFF616161)),
                                                     ),
+                                                    if (activity['creator_name'] != null) ...[
+                                                      const SizedBox(height: 2),
+                                                      Row(
+                                                        children: [
+                                                          const Icon(Icons.person_outline, size: 12, color: Color(0xFF616161)),
+                                                          const SizedBox(width: 2),
+                                                          Flexible(
+                                                            child: Text(
+                                                              activity['creator_name'] as String,
+                                                              maxLines: 1,
+                                                              overflow: TextOverflow.ellipsis,
+                                                              style: const TextStyle(fontSize: 12, color: Color(0xFF616161)),
+                                                            ),
+                                                          ),
+                                                          if (activity['creator_rating_count'] != null && activity['creator_rating_count'] > 0) ...[
+                                                            const SizedBox(width: 6),
+                                                            const Icon(Icons.star, size: 12, color: Color(0xFFFFA726)),
+                                                            const SizedBox(width: 2),
+                                                            Text(
+                                                              '${(activity['creator_rating_avg'] as num).toStringAsFixed(1)}',
+                                                              style: const TextStyle(fontSize: 12, color: Color(0xFF616161), fontWeight: FontWeight.w500),
+                                                            ),
+                                                          ],
+                                                        ],
+                                                      ),
+                                                    ],
                                                   ],
                                                 ),
                                               ),
