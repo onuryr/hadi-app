@@ -64,6 +64,68 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     super.dispose();
   }
 
+  int _profileCompletion() {
+    int filled = 0;
+    if ((_user?['display_name'] as String?)?.trim().isNotEmpty == true) filled++;
+    if ((_user?['avatar_url'] as String?)?.isNotEmpty == true) filled++;
+    if ((_user?['bio'] as String?)?.trim().isNotEmpty == true) filled++;
+    return (filled / 3 * 100).round();
+  }
+
+  Widget _buildCompletionBanner() {
+    final l = AppLocalizations.of(context);
+    final percent = _profileCompletion();
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.account_circle_outlined,
+              color: scheme.onPrimaryContainer),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.completeProfile(percent),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onPrimaryContainer,
+                    )),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: percent / 100,
+                    minHeight: 6,
+                    backgroundColor: scheme.surface.withValues(alpha: 0.4),
+                    valueColor: AlwaysStoppedAnimation(scheme.primary),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(l.completeProfileHint,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onPrimaryContainer.withValues(alpha: 0.85),
+                    )),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: () => setState(() => _editMode = true),
+            child: Text(l.completeProfileCta),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handleRefresh() async {
     if (_loading) return;
     try {
@@ -338,7 +400,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           );
 
           if (!_isSelf || past || a['status'] == 'inactive') return tile;
-          if (listType != 'created' && listType != 'favorite') return tile;
+          if (listType != 'created' &&
+              listType != 'favorite' &&
+              listType != 'joined') return tile;
 
           final activityId = a['id'].toString();
           final l = AppLocalizations.of(context);
@@ -350,7 +414,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               padding: const EdgeInsets.symmetric(horizontal: 24),
               color: Theme.of(context).colorScheme.errorContainer,
               child: Icon(
-                listType == 'favorite' ? Icons.heart_broken : Icons.delete_outline,
+                listType == 'favorite'
+                    ? Icons.heart_broken
+                    : listType == 'joined'
+                        ? Icons.exit_to_app
+                        : Icons.delete_outline,
                 color: Theme.of(context).colorScheme.onErrorContainer,
               ),
             ),
@@ -358,9 +426,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               HapticFeedback.mediumImpact();
               final removed = a;
               final messenger = ScaffoldMessenger.of(this.context);
+              final uid = _supabase.auth.currentUser?.id;
               setState(() {
                 if (listType == 'favorite') {
                   _favoriteActivities.removeWhere((x) => x['id'].toString() == activityId);
+                } else if (listType == 'joined') {
+                  _joinedActivities.removeWhere((x) => x['id'].toString() == activityId);
                 } else {
                   _createdActivities.removeWhere((x) => x['id'].toString() == activityId);
                 }
@@ -368,6 +439,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               try {
                 if (listType == 'favorite') {
                   await FavoritesService.toggle(activityId);
+                } else if (listType == 'joined') {
+                  await _supabase
+                      .from('activity_participants')
+                      .delete()
+                      .eq('activity_id', activityId)
+                      .eq('user_id', uid!);
                 } else {
                   await _supabase
                       .from('activities')
@@ -379,7 +456,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   SnackBar(
                     content: Text(listType == 'favorite'
                         ? l.removeFromFavorites
-                        : l.activityCancelled),
+                        : listType == 'joined'
+                            ? l.leftActivitySnack
+                            : l.activityCancelled),
                     duration: const Duration(seconds: 3),
                     action: SnackBarAction(
                       label: l.undo,
@@ -389,6 +468,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             await FavoritesService.toggle(activityId);
                             if (mounted) {
                               setState(() => _favoriteActivities.insert(0, removed));
+                            }
+                          } else if (listType == 'joined') {
+                            await _supabase.from('activity_participants').insert({
+                              'activity_id': activityId,
+                              'user_id': uid,
+                              'status': 'approved',
+                            });
+                            if (mounted) {
+                              setState(() => _joinedActivities.insert(0, removed));
                             }
                           } else {
                             await _supabase
@@ -408,6 +496,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 setState(() {
                   if (listType == 'favorite') {
                     _favoriteActivities.insert(0, removed);
+                  } else if (listType == 'joined') {
+                    _joinedActivities.insert(0, removed);
                   } else {
                     _createdActivities.insert(0, removed);
                   }
@@ -649,6 +739,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ],
                   ),
                 ),
+                if (_isSelf && _profileCompletion() < 100) _buildCompletionBanner(),
                 TabBar(
                   controller: _tabController,
                   isScrollable: true,

@@ -272,6 +272,9 @@ class AppLocalizations {
   String get pastDateNotAllowed => _t('Geçmiş tarih ve saat seçemezsin', 'Past date and time not allowed');
   String get reasonOptional => _t('Sebep (opsiyonel)', 'Reason (optional)');
   String get reasonHelpCancel => _t('Katılımcılara bildirimle gönderilir', 'Sent to participants in the notification');
+  String completeProfile(int percent) => _t('Profilini tamamla %$percent', 'Complete your profile $percent%');
+  String get completeProfileHint => _t('Foto, isim ve bio ekleyince diğer kullanıcılar seni daha kolay tanır.', 'Add a photo, name and bio so others can recognize you.');
+  String get completeProfileCta => _t('Düzenle', 'Edit');
   String get photoUploadFailed => _t('Fotoğraf yüklenemedi', 'Could not upload photo');
   String ratingsCount(int count) => _t('$count değerlendirme', '$count ratings');
   String get aboutMeEmptySelf => _t('Hakkımda kısmı boş', 'Bio is empty');
