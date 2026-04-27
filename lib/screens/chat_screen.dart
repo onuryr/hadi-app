@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../services/chat_service.dart';
 import '../services/notification_service.dart';
 import '../services/report_block_service.dart';
+import '../widgets/error_state.dart';
 
 class ChatScreen extends StatefulWidget {
   final String activityId;
@@ -26,6 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
   bool _loading = true;
+  String? _error;
   bool _sending = false;
   bool _isAtBottom = true;
   int _newMessageCount = 0;
@@ -79,6 +81,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadMessages() async {
+    setState(() { _loading = true; _error = null; });
     try {
       final data = await ChatService.fetchMessages(widget.activityId);
       for (final m in data) {
@@ -91,8 +94,11 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       _scrollToBottom();
     } catch (e) {
-      setState(() => _loading = false);
-      if (mounted) {
+      setState(() {
+        _loading = false;
+        if (_messages.isEmpty) _error = e.toString();
+      });
+      if (mounted && _messages.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${AppLocalizations.of(context).messagesLoadFailed}: $e')),
         );
@@ -248,10 +254,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(_dayLabel(context, dt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    child: Text(
+                      _dayLabel(context, dt),
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
                   ),
                 ),
               );
@@ -281,7 +290,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         margin: const EdgeInsets.symmetric(vertical: 2),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(16),
                             topRight: Radius.circular(16),
@@ -447,7 +456,9 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
+                : _error != null && _messages.isEmpty
+                    ? ErrorState(onRetry: _loadMessages)
+                    : _messages.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,

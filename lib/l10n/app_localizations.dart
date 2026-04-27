@@ -288,6 +288,10 @@ class AppLocalizations {
   String get following => _t('Takipte', 'Following');
   String get followFailed => _t('Takip işlemi başarısız', 'Follow failed');
   String get trendingToday => _t('Bugün Popüler', 'Trending Today');
+  String get followers => _t('Takipçi', 'Followers');
+  String get followingTitle => _t('Takip Edilen', 'Following');
+  String get noFollowers => _t('Henüz takipçi yok', 'No followers yet');
+  String get noFollowing => _t('Kimseyi takip etmiyor', 'Not following anyone yet');
   String get photoUploadFailed => _t('Fotoğraf yüklenemedi', 'Could not upload photo');
   String ratingsCount(int count) => _t('$count değerlendirme', '$count ratings');
   String get aboutMeEmptySelf => _t('Hakkımda kısmı boş', 'Bio is empty');

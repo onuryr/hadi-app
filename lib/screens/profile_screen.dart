@@ -10,10 +10,12 @@ import '../l10n/app_localizations.dart';
 import '../services/deep_link_service.dart';
 import '../services/favorites_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/error_state.dart';
 import '../services/rating_service.dart';
 import '../services/report_block_service.dart';
 import 'activity_detail_screen.dart';
 import 'blocked_users_screen.dart';
+import 'follow_list_screen.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -38,11 +40,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   double _avgRating = 0.0;
   int _ratingCount = 0;
   bool _loading = true;
+  String? _error;
   bool _saving = false;
   bool _editMode = false;
   bool _isBlocked = false;
   bool _isFollowing = false;
   bool _followBusy = false;
+  int _followersCount = 0;
+  int _followingCount = 0;
 
   bool get _isSelf {
     final current = _supabase.auth.currentUser?.id;
@@ -65,6 +70,32 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _nameController.dispose();
     _bioController.dispose();
     super.dispose();
+  }
+
+  Widget _buildFollowCount(int count, String label, FollowListMode mode) {
+    return InkWell(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FollowListScreen(userId: _viewedUserId, mode: mode),
+        ),
+      ),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('$count',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                )),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _toggleFollow() async {
@@ -167,6 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       return;
     }
     final userId = _viewedUserId;
+    setState(() => _error = null);
     try {
       final baseFutures = [
         _supabase.from('users').select().eq('id', userId).single(),
@@ -211,6 +243,22 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
       bool blocked = false;
       bool following = false;
+      int followersCount = 0;
+      int followingCount = 0;
+      try {
+        final fc = await _supabase
+            .from('follows')
+            .count(CountOption.exact)
+            .eq('followee_id', userId);
+        followersCount = fc;
+      } catch (_) {}
+      try {
+        final fg = await _supabase
+            .from('follows')
+            .count(CountOption.exact)
+            .eq('follower_id', userId);
+        followingCount = fg;
+      } catch (_) {}
       if (!_isSelf) {
         try {
           final blocks = await ReportBlockService.getMyBlocks();
@@ -239,11 +287,16 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _ratingCount = rating.count;
         _isBlocked = blocked;
         _isFollowing = following;
+        _followersCount = followersCount;
+        _followingCount = followingCount;
         _loading = false;
       });
     } catch (e) {
-      setState(() => _loading = false);
-      if (showError && mounted) {
+      setState(() {
+        _loading = false;
+        if (_user == null) _error = e.toString();
+      });
+      if (showError && mounted && _user != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).refreshError)),
         );
@@ -704,7 +757,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : NestedScrollView(
+          : _error != null && _user == null
+              ? ErrorState(onRetry: () {
+                  setState(() => _loading = true);
+                  _loadProfile();
+                })
+              : NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) => [
                 SliverToBoxAdapter(
                   child: Padding(
@@ -769,6 +827,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               '${_avgRating.toStringAsFixed(1)} (${AppLocalizations.of(context).ratingsCount(_ratingCount)})',
                               style: const TextStyle(color: Colors.grey),
                             ),
+                          ],
+                        ),
+                      ],
+                      if (!_editMode) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildFollowCount(_followersCount, AppLocalizations.of(context).followers, FollowListMode.followers),
+                            const SizedBox(width: 24),
+                            _buildFollowCount(_followingCount, AppLocalizations.of(context).followingTitle, FollowListMode.following),
                           ],
                         ),
                       ],
