@@ -397,9 +397,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       )
                     : const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: a)),
-            ),
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: a)),
+              );
+              _loadProfile();
+            },
             onLongPress: () => _shareActivity(a),
           );
 

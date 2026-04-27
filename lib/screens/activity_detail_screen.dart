@@ -580,9 +580,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId)),
-                ),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => ProfileScreen(userId: userId)),
+                  );
+                  _loadData();
+                },
                 child: CircleAvatar(
                   backgroundImage: avatarUrl != null
                       ? CachedNetworkImageProvider(avatarUrl)
@@ -819,11 +822,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                             title: Text(pName),
                             onTap: pUserId.isEmpty
                                 ? null
-                                : () => Navigator.of(context).push(
+                                : () async {
+                                    await Navigator.of(context).push(
                                       MaterialPageRoute(
                                           builder: (_) => ProfileScreen(
                                               userId: pUserId)),
-                                    ),
+                                    );
+                                    _loadData();
+                                  },
                             trailing: isThisProcessing
                                 ? const SizedBox(
                                     width: 24,
@@ -951,11 +957,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                               : null,
                           onTap: userId == null
                               ? null
-                              : () => Navigator.of(context).push(
+                              : () async {
+                                  await Navigator.of(context).push(
                                     MaterialPageRoute(
                                         builder: (_) =>
                                             ProfileScreen(userId: userId)),
-                                  ),
+                                  );
+                                  _loadData();
+                                },
                         );
                       }),
                       if (_isPast && _isApprovedParticipant)
