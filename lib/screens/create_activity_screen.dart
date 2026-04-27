@@ -11,12 +11,16 @@ class CreateActivityScreen extends StatefulWidget {
   final Map<String, dynamic>? existing;
   final LatLng? existingLocation;
   final bool lockCategory;
+  final Map<String, dynamic>? prefill;
+  final LatLng? prefillLocation;
 
   const CreateActivityScreen({
     super.key,
     this.existing,
     this.existingLocation,
     this.lockCategory = false,
+    this.prefill,
+    this.prefillLocation,
   });
 
   @override
@@ -55,6 +59,15 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       }
       _existingImageUrl = e['image_url'];
       _selectedLocation = widget.existingLocation;
+    } else if (widget.prefill != null) {
+      final p = widget.prefill!;
+      _titleController.text = p['title'] ?? '';
+      _descriptionController.text = p['description'] ?? '';
+      _locationNameController.text = p['location_name'] ?? '';
+      _selectedCategory = p['category_id'] as int?;
+      _maxParticipants = p['max_participants'] ?? 10;
+      _selectedLocation = widget.prefillLocation;
+      // Don't copy old date or image — user picks fresh
     }
   }
 

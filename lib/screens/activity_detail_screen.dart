@@ -1027,6 +1027,46 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                           ],
                         );
                       }),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _shareActivity,
+                        icon: const Icon(Icons.person_add_alt),
+                        label: Text(AppLocalizations.of(context).inviteFriend),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 56),
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                          alignment: Alignment.centerLeft,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                      if (_isCreator && _isPast) ...[
+                        const SizedBox(height: 8),
+                        FilledButton.icon(
+                          onPressed: () async {
+                            final latLng = _parseLocation(activity['location']);
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => CreateActivityScreen(
+                                  prefill: activity,
+                                  prefillLocation: latLng,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: Text(AppLocalizations.of(context).repeatActivity),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 56),
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),

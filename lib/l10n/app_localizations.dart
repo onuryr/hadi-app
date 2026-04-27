@@ -275,8 +275,15 @@ class AppLocalizations {
   String completeProfile(int percent) => _t('Profilini tamamla %$percent', 'Complete your profile $percent%');
   String get completeProfileHint => _t('Foto, isim ve bio ekleyince diğer kullanıcılar seni daha kolay tanır.', 'Add a photo, name and bio so others can recognize you.');
   String get completeProfileCta => _t('Düzenle', 'Edit');
-  String get surpriseMe => _t('Bana Sürpriz Yap', 'Surprise Me');
+  String get surpriseMe => _t('Beni Şaşırt', 'Surprise Me');
   String get noActivitiesFound => _t('Yakınında aktivite yok', 'No activities nearby');
+  String get repeatActivity => _t('Tekrar Oluştur', 'Create Again');
+  String get inviteFriend => _t('Arkadaşını Davet Et', 'Invite a Friend');
+  String get whenLabel => _t('Zaman', 'When');
+  String get whenAll => _t('Tümü', 'All');
+  String get whenTonight => _t('Bu akşam', 'Tonight');
+  String get whenWeekend => _t('Hafta sonu', 'Weekend');
+  String get whenNextWeek => _t('Önümüzdeki hafta', 'Next week');
   String get photoUploadFailed => _t('Fotoğraf yüklenemedi', 'Could not upload photo');
   String ratingsCount(int count) => _t('$count değerlendirme', '$count ratings');
   String get aboutMeEmptySelf => _t('Hakkımda kısmı boş', 'Bio is empty');

@@ -46,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   int _radiusKm = 10;
   String _sortBy = 'distance';
+  String _whenFilter = 'all'; // all | tonight | weekend | next_week
   int _unreadCount = 0;
   Set<String> _favoriteIds = {};
   Timer? _searchDebounce;
@@ -283,6 +284,48 @@ class _HomeScreenState extends State<HomeScreen> {
     final count = await ChatService.unreadActivityCount();
     if (mounted) setState(() => _unreadCount = count);
   }
+
+  ({DateTime? from, DateTime? to}) _whenRange() {
+    final now = DateTime.now();
+    switch (_whenFilter) {
+      case 'tonight':
+        final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        return (from: now, to: endOfToday);
+      case 'weekend':
+        // Saturday + Sunday of current week (or upcoming if past)
+        final daysUntilSat = (DateTime.saturday - now.weekday) % 7;
+        final sat = DateTime(now.year, now.month, now.day + daysUntilSat);
+        final sunEnd = sat.add(const Duration(days: 2)).subtract(const Duration(seconds: 1));
+        return (from: sat.isBefore(now) ? now : sat, to: sunEnd);
+      case 'next_week':
+        final daysUntilMon = (DateTime.monday - now.weekday) % 7;
+        final mon = DateTime(now.year, now.month, now.day + (daysUntilMon == 0 ? 7 : daysUntilMon));
+        final sunEnd = mon.add(const Duration(days: 7)).subtract(const Duration(seconds: 1));
+        return (from: mon, to: sunEnd);
+      default:
+        return (from: null, to: null);
+    }
+  }
+
+  List<Map<String, dynamic>> _applyWhenFilter(List<Map<String, dynamic>> list) {
+    final r = _whenRange();
+    if (r.from == null && r.to == null) return list;
+    return list.where((a) {
+      final sa = a['scheduled_at'];
+      if (sa == null) return false;
+      final dt = DateTime.parse(sa).toLocal();
+      if (r.from != null && dt.isBefore(r.from!)) return false;
+      if (r.to != null && dt.isAfter(r.to!)) return false;
+      return true;
+    }).toList();
+  }
+
+  String _whenLabel(AppLocalizations l) => switch (_whenFilter) {
+        'tonight' => l.whenTonight,
+        'weekend' => l.whenWeekend,
+        'next_week' => l.whenNextWeek,
+        _ => l.whenLabel,
+      };
 
   Future<void> _surpriseMe() async {
     final pool = _activities
@@ -801,6 +844,67 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ActionChip(
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    labelPadding: EdgeInsets.zero,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    label: SizedBox(
+                      width: double.infinity,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.event, size: 16),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              _whenLabel(l),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                          const Icon(Icons.arrow_drop_down, size: 18),
+                        ],
+                      ),
+                    ),
+                    onPressed: () async {
+                      final selected = await showModalBottomSheet<String>(
+                        context: context,
+                        builder: (ctx) => SafeArea(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(l.whenLabel,
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              ),
+                              for (final entry in {
+                                'all': l.whenAll,
+                                'tonight': l.whenTonight,
+                                'weekend': l.whenWeekend,
+                                'next_week': l.whenNextWeek,
+                              }.entries)
+                                ListTile(
+                                  title: Text(entry.value),
+                                  trailing: entry.key == _whenFilter
+                                      ? const Icon(Icons.check, color: Colors.deepPurple)
+                                      : null,
+                                  onTap: () => Navigator.of(ctx).pop(entry.key),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                      if (selected != null && selected != _whenFilter) {
+                        setState(() => _whenFilter = selected);
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -839,8 +943,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               )
-                            : _activities.isEmpty
-                                ? LayoutBuilder(
+                            : Builder(builder: (context) {
+                                final filtered = _applyWhenFilter(_activities);
+                                if (filtered.isEmpty) {
+                                  return LayoutBuilder(
                                     builder: (context, constraints) => SingleChildScrollView(
                                       physics: const AlwaysScrollableScrollPhysics(),
                                       child: ConstrainedBox(
@@ -848,20 +954,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: Center(child: Text(l.noActivitiesNearby)),
                                       ),
                                     ),
-                                  )
-                                : ListView.builder(
+                                  );
+                                }
+                                final showLoadMore = _whenFilter == 'all' && _hasMore;
+                                return ListView.builder(
                                     controller: _scrollController,
                                     physics: const AlwaysScrollableScrollPhysics(),
                                     padding: const EdgeInsets.symmetric(vertical: 8),
-                                    itemCount: _activities.length + (_hasMore ? 1 : 0),
+                                    itemCount: filtered.length + (showLoadMore ? 1 : 0),
                                     itemBuilder: (context, index) {
-                                      if (index == _activities.length) {
+                                      if (index == filtered.length) {
                                         return const Padding(
                                           padding: EdgeInsets.all(16),
                                           child: Center(child: CircularProgressIndicator()),
                                         );
                                       }
-                                      final activity = _activities[index];
+                                      final activity = filtered[index];
                                       final imageUrl = activityImageUrl(
                                         imageUrl: activity['image_url'],
                                         categoryId: activity['category_id'],
@@ -1004,7 +1112,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       );
 
                                     },
-                                  ),
+                                  );
+                              }),
                       ),
           ),
         ],
