@@ -266,8 +266,10 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
       _loadParticipants(),
       _loadFavoriteStatus(),
       _loadMyRatings(),
-      _loadCreatorRating(),
     ]);
+    // Rating depends on _fullActivity['creator_id'] which the home card
+    // payload doesn't include — must run after _loadFullActivity finishes.
+    await _loadCreatorRating();
   }
 
   Future<void> _loadCreatorRating() async {
