@@ -132,6 +132,13 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         {'id': 8, 'name': l.catFood, 'icon': '🍽️'},
         {'id': 9, 'name': l.catMuseum, 'icon': '🏛️'},
         {'id': 10, 'name': l.catCinema, 'icon': '🎬'},
+        {'id': 11, 'name': l.catCoffee, 'icon': '☕'},
+        {'id': 12, 'name': l.catGames, 'icon': '🎲'},
+        {'id': 13, 'name': l.catNature, 'icon': '⛺'},
+        {'id': 14, 'name': l.catDance, 'icon': '💃'},
+        {'id': 15, 'name': l.catWorkshop, 'icon': '🎨'},
+        {'id': 16, 'name': l.catYoga, 'icon': '🧘'},
+        {'id': 17, 'name': l.catOther, 'icon': '✨'},
       ];
 
   Future<void> _pickLocation() async {

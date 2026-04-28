@@ -78,6 +78,13 @@ class _HomeScreenState extends State<HomeScreen> {
     {'id': 8, 'name': 'Yemek', 'icon': '🍽️'},
     {'id': 9, 'name': 'Müze', 'icon': '🏛️'},
     {'id': 10, 'name': 'Sinema', 'icon': '🎬'},
+    {'id': 11, 'name': 'Kahve', 'icon': '☕'},
+    {'id': 12, 'name': 'Oyun', 'icon': '🎲'},
+    {'id': 13, 'name': 'Doğa', 'icon': '⛺'},
+    {'id': 14, 'name': 'Dans', 'icon': '💃'},
+    {'id': 15, 'name': 'Atölye', 'icon': '🎨'},
+    {'id': 16, 'name': 'Yoga', 'icon': '🧘'},
+    {'id': 17, 'name': 'Diğer', 'icon': '✨'},
   ];
 
   RealtimeChannel? _messageChannel;
@@ -460,6 +467,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {}
   }
 
+  // ignore: unused_element
   Future<void> _surpriseMe() async {
     final myId = _supabase.auth.currentUser?.id;
     Set<String> myActivityIds = {};
@@ -725,30 +733,17 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(icon: const Icon(Icons.logout), tooltip: l.signOut, onPressed: _signOut),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'surprise-fab',
-            tooltip: l.surpriseMe,
-            backgroundColor: const Color(0xFFFF9800),
-            foregroundColor: Colors.white,
-            onPressed: _surpriseMe,
-            child: const Icon(Icons.casino),
-          ),
-          const SizedBox(height: 12),
-          FloatingActionButton(
-            heroTag: 'create-fab',
-            onPressed: () async {
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CreateActivityScreen()),
-              );
-              if (result == true) _loadActivities();
-            },
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        // "Beni Şaşırt" mini-FAB temporarily hidden — re-enable when there's
+        // a useful pool of nearby activities to randomize from.
+        heroTag: 'create-fab',
+        onPressed: () async {
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const CreateActivityScreen()),
+          );
+          if (result == true) _loadActivities();
+        },
+        child: const Icon(Icons.add),
       ),
       body: Column(
         children: [
@@ -1100,7 +1095,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   );
                                 }
                                 final showLoadMore = _whenFilter == 'all' && _hasMore;
-                                final showShelf = _trending.isNotEmpty && _whenFilter == 'all' && _searchQuery.isEmpty;
+                                // Bugün Popüler shelf temporarily hidden — re-enable when active
+                                // activity volume is meaningful (>20 in a city). Backend endpoint is live.
+                                const showShelf = false;
                                 final shelfOffset = showShelf ? 1 : 0;
                                 return ListView.builder(
                                     controller: _scrollController,

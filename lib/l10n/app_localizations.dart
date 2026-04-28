@@ -131,6 +131,13 @@ class AppLocalizations {
   String get catFood => _t('Yemek', 'Food');
   String get catMuseum => _t('Müze', 'Museum');
   String get catCinema => _t('Sinema', 'Cinema');
+  String get catCoffee => _t('Kahve', 'Coffee');
+  String get catGames => _t('Oyun', 'Games');
+  String get catNature => _t('Doğa', 'Nature');
+  String get catDance => _t('Dans', 'Dance');
+  String get catWorkshop => _t('Atölye', 'Workshop');
+  String get catYoga => _t('Yoga', 'Yoga');
+  String get catOther => _t('Diğer', 'Other');
   String get categoryHint => _t('Bir kategori seç', 'Pick a category');
   String get categoryRequired => _t('Kategori seçmelisin', 'Please select a category');
   String get signOutConfirmTitle => _t('Çıkış yapmak istediğine emin misin?', 'Sign out?');
