@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
 
   static const _apiBase = 'https://hadi-production-e4f3.up.railway.app';
-  static const _pageSize = 20;
+  static const _pageSize = 15;
 
   static const _categories = [
     {'id': 1, 'name': 'Yürüyüş', 'icon': '🚶'},
