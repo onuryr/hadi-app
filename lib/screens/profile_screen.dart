@@ -497,7 +497,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               await Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => ActivityDetailScreen(activity: a)),
               );
-              _loadProfile();
+              await _loadProfile();
             },
             onLongPress: () => _shareActivity(a),
           );
