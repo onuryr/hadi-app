@@ -246,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              const SizedBox(height: 96),
               Center(
                 child: Image.asset(
                   'assets/icon/wordmark_clean.png',
