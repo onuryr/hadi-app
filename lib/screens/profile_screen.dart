@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -555,7 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 }
                 if (!mounted) return;
                 messenger.hideCurrentSnackBar();
-                messenger.showSnackBar(
+                final controller = messenger.showSnackBar(
                   SnackBar(
                     content: Text(listType == 'favorite'
                         ? l.removeFromFavorites
@@ -594,6 +595,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
                   ),
                 );
+                // Workaround: Material's built-in dismiss timer sometimes
+                // doesn't fire after a setState burst. Force-close after 3s.
+                Timer(const Duration(seconds: 3, milliseconds: 100), () {
+                  try { controller.close(); } catch (_) {}
+                });
               } catch (e) {
                 if (!mounted) return;
                 setState(() {
