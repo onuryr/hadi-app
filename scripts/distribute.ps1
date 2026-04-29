@@ -34,4 +34,4 @@ firebase appdistribution:distribute $Apk `
 
 Write-Host ""
 Write-Host "==> Tester invite link (allowlist'tekiler aciktan paylasabilir)" -ForegroundColor Cyan
-Write-Host "https://appdistribution.firebase.dev/i/c0622b6668eb7628" -ForegroundColor Yellow
+Write-Host "https://appdistribution.firebase.dev/i/c4f095673fe81ea8" -ForegroundColor Yellow
