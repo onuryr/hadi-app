@@ -10,7 +10,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 import 'create_activity_screen.dart';
@@ -676,7 +675,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SvgPicture.asset('assets/icon/app_icon.svg', width: 28, height: 28),
+            Image.asset('assets/icon/app_icon_transparent.png', width: 28, height: 28),
             const SizedBox(width: 10),
             Text(
               'Hadi',

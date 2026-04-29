@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
@@ -250,8 +249,8 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 24),
               Center(
-                child: SvgPicture.asset(
-                  'assets/icon/app_icon.svg',
+                child: Image.asset(
+                  'assets/icon/app_icon_transparent.png',
                   width: 110,
                   height: 110,
                 ),
