@@ -670,7 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final sortOpts = _sortOptions(l);
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 12,
+        titleSpacing: 20,
         title: Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Image.asset(
