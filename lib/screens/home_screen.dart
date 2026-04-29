@@ -673,7 +673,7 @@ class _HomeScreenState extends State<HomeScreen> {
         titleSpacing: 12,
         title: Image.asset(
           'assets/icon/wordmark_clean.png',
-          height: 32,
+          height: 24,
           fit: BoxFit.contain,
         ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
