@@ -671,10 +671,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 12,
-        title: Image.asset(
-          'assets/icon/wordmark_clean.png',
-          height: 24,
-          fit: BoxFit.contain,
+        title: Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Image.asset(
+            'assets/icon/wordmark_clean.png',
+            height: 24,
+            fit: BoxFit.contain,
+          ),
         ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [

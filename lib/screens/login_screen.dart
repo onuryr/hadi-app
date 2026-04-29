@@ -250,7 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: Image.asset(
                   'assets/icon/wordmark_clean.png',
-                  width: 160,
+                  width: 120,
                   fit: BoxFit.contain,
                 ),
               ),
