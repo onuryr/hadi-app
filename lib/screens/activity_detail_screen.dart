@@ -45,6 +45,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   Map<String, int> _myRatings = {};
   String _processingUserId = '';
   ({double avg, int count})? _creatorRating;
+  RealtimeChannel? _participantsChannel;
 
   bool get _isPast {
     final sa = _fullActivity['scheduled_at'];
@@ -255,9 +256,35 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
     super.initState();
     _fullActivity = Map.from(widget.activity);
     _loadData();
+    _subscribeParticipants();
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) setState(() => _skeletonMinPassed = true);
     });
+  }
+
+  void _subscribeParticipants() {
+    final activityId = widget.activity['id'].toString();
+    _participantsChannel = _supabase.channel('participants:$activityId')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: 'activity_participants',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'activity_id',
+          value: activityId,
+        ),
+        callback: (_) => _loadParticipants(),
+      )
+      ..subscribe();
+  }
+
+  @override
+  void dispose() {
+    if (_participantsChannel != null) {
+      _supabase.removeChannel(_participantsChannel!);
+    }
+    super.dispose();
   }
 
   Future<void> _loadData() async {
