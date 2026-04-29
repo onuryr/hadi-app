@@ -12,6 +12,7 @@ class NotificationService {
   static final _messaging = FirebaseMessaging.instance;
   static final _localNotif = FlutterLocalNotificationsPlugin();
   static final navigatorKey = GlobalKey<NavigatorState>();
+  static final rootMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   static Future<void> _post(String path, Map<String, dynamic> body) async {
     try {

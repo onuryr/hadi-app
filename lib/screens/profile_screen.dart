@@ -528,7 +528,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             onDismissed: (_) async {
               HapticFeedback.mediumImpact();
               final removed = a;
-              final messenger = ScaffoldMessenger.of(this.context);
+              final messenger = NotificationService.rootMessengerKey.currentState ?? ScaffoldMessenger.of(this.context);
               final uid = _supabase.auth.currentUser?.id;
               setState(() {
                 if (listType == 'favorite') {

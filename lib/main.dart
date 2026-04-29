@@ -76,6 +76,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Hadi',
       navigatorKey: NotificationService.navigatorKey,
+      scaffoldMessengerKey: NotificationService.rootMessengerKey,
       locale: localeNotifier.locale,
       localeResolutionCallback: (deviceLocale, supportedLocales) => localeNotifier.locale,
       supportedLocales: const [

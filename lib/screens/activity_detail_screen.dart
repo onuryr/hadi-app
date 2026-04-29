@@ -180,7 +180,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           .update({'status': 'inactive'}).eq('id', activityId);
       if (mounted) {
         final l = AppLocalizations.of(context);
-        final messenger = ScaffoldMessenger.of(context);
+        final messenger = NotificationService.rootMessengerKey.currentState
+            ?? ScaffoldMessenger.of(context);
         Navigator.of(context).pop(true);
         messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
@@ -233,7 +234,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           .eq('activity_id', activityId);
       await _supabase.from('activities').delete().eq('id', activityId);
       if (mounted) {
-        final messenger = ScaffoldMessenger.of(context);
+        final messenger = NotificationService.rootMessengerKey.currentState
+            ?? ScaffoldMessenger.of(context);
         final text = AppLocalizations.of(context).activityDeleted;
         Navigator.of(context).pop(true);
         messenger.hideCurrentSnackBar();
@@ -448,8 +450,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           widget.activity['id'].toString(), leaveUserName);
       await _loadParticipants();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).leftActivitySnack)),
+        final messenger = NotificationService.rootMessengerKey.currentState
+            ?? ScaffoldMessenger.of(context);
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).leftActivitySnack),
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     } catch (e) {
