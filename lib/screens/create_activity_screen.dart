@@ -255,7 +255,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).activityCreated)),
         );
-        Navigator.of(context).pop(true);
+        // For edits return true; for fresh creates return the new id so callers
+        // (e.g. "Tekrar Oluştur") can navigate to the newly created activity.
+        Navigator.of(context).pop(_isEdit ? true : activityId);
       }
     } catch (e) {
       if (mounted) {

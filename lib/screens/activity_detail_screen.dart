@@ -1088,7 +1088,7 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                         FilledButton.icon(
                           onPressed: () async {
                             final latLng = _parseLocation(activity['location']);
-                            await Navigator.of(context).push(
+                            final result = await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => CreateActivityScreen(
                                   prefill: activity,
@@ -1096,6 +1096,24 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                                 ),
                               ),
                             );
+                            // If create succeeded, navigate to the new activity.
+                            if (result is String && mounted) {
+                              try {
+                                final newAct = await _supabase
+                                    .from('activities')
+                                    .select(
+                                        'id, title, description, location_name, scheduled_at, max_participants, location, creator_id, image_url, category_id, status')
+                                    .eq('id', result)
+                                    .maybeSingle();
+                                if (newAct != null && mounted) {
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (_) => ActivityDetailScreen(activity: newAct),
+                                    ),
+                                  );
+                                }
+                              } catch (_) {}
+                            }
                           },
                           icon: const Icon(Icons.refresh),
                           label: Text(AppLocalizations.of(context).repeatActivity),
