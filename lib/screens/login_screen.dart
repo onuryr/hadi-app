@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../l10n/app_localizations.dart';
 import '../services/locale_service.dart';
@@ -250,23 +249,9 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 24),
               Center(
                 child: Image.asset(
-                  'assets/icon/app_icon_transparent.png',
-                  width: 110,
-                  height: 110,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Hadi',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.pacifico(
-                  fontSize: 64,
-                  foreground: Paint()
-                    ..shader = const LinearGradient(
-                      colors: [Color(0xFFFFB74D), Color(0xFFE65100)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ).createShader(const Rect.fromLTWH(0, 0, 220, 64)),
+                  'assets/icon/wordmark_clean.png',
+                  width: 240,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 8),

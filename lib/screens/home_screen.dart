@@ -10,7 +10,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 import 'create_activity_screen.dart';
 import 'activity_detail_screen.dart';
@@ -672,24 +671,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 12,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset('assets/icon/app_icon_transparent.png', width: 28, height: 28),
-            const SizedBox(width: 10),
-            Text(
-              'Hadi',
-              style: GoogleFonts.pacifico(
-                fontSize: 28,
-                foreground: Paint()
-                  ..shader = const LinearGradient(
-                    colors: [Color(0xFFFFB74D), Color(0xFFE65100)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ).createShader(const Rect.fromLTWH(0, 0, 100, 28)),
-              ),
-            ),
-          ],
+        title: Image.asset(
+          'assets/icon/wordmark_clean.png',
+          height: 32,
+          fit: BoxFit.contain,
         ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
